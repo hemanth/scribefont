@@ -83,6 +83,21 @@ class TestBDDHandwritingWorkflows(unittest.TestCase):
         self.assertEqual(font.glyph("g")["source"], "biometric_bank")
         self.assertTrue(verify_truetype_bytes(font.to_ttf())["valid"])
 
+    def test_scenario_4_printable_chart_filled_and_uploaded(self) -> None:
+        """Given a user who prints the 5x13 drop-out template chart, writes all 65 glyphs in dark pen, and uploads it,
+        When converted via scribefont.from_image,
+        Then all light cyan/gray guide boxes drop out automatically and 65/65 glyphs are traced with inner counter holes."""
+        chart_svg = ROOT.parent / "docs" / "samples" / "scribefont-template-chart.svg"
+        filled_png = ROOT.parent / "docs" / "samples" / "sample-filled-template.png"
+        self.assertTrue(chart_svg.exists())
+        self.assertTrue(filled_png.exists())
+
+        font = scribefont.from_image(filled_png, family="PrintableChartFont")
+        self.assertEqual(font.traced_count, 65)
+        self.assertEqual(font.glyph("A")["source"], "traced_image")
+        self.assertGreaterEqual(len(font.glyph("A")["contours"]), 2)
+        self.assertTrue(verify_truetype_bytes(font.to_ttf())["valid"])
+
 
 if __name__ == "__main__":
     unittest.main()

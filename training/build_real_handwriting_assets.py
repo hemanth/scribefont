@@ -214,6 +214,66 @@ def render_handwriting_sample_sheet(
     return "".join(lines)
 
 
+def render_printable_template_sheet(out_png: Path, out_svg: Path) -> None:
+    """Generate a printable 5x13 Handwriting Template Chart (PNG + SVG) with drop-out cyan guide boxes & baselines."""
+    lines = [
+        "ABCDEFGHIJKLM",
+        "NOPQRSTUVWXYZ",
+        "abcdefghijklm",
+        "nopqrstuvwxyz",
+        "0123456789!?.",
+    ]
+    W, H = 920, 460
+    im = Image.new("RGB", (W, H), (255, 255, 255))
+    dr = ImageDraw.Draw(im)
+    label_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 11)
+    ghost_font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 22)
+
+    row_step = H / 5.22
+    col_step = W / 14.15
+
+    svg_parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
+        f'  <rect width="{W}" height="{H}" fill="#ffffff"/>',
+        '  <g font-family="monospace, sans-serif">',
+    ]
+
+    for r_idx, line in enumerate(lines):
+        y0 = int(round(H * 0.032 + r_idx * row_step))
+        y1 = int(round(y0 + row_step - 4))
+        cell_h = y1 - y0
+        base_y = int(round(y0 + cell_h * 0.68))
+        xheight_y = int(round(y0 + cell_h * 0.34))
+
+        for c_idx, ch in enumerate(line):
+            x0 = int(round(W * 0.035 + c_idx * col_step))
+            x1 = int(round(x0 + col_step))
+            bx0, by0, bx1, by1 = x0 + 3, y0 + 2, x1 - 3, y1 - 2
+
+            # Very faint cyan/gray guide box (luminance > 235 so it drops out during ink thresholding!)
+            dr.rectangle([bx0, by0, bx1, by1], outline=(226, 232, 240), width=1)
+            dr.line([(bx0 + 2, base_y), (bx1 - 2, base_y)], fill=(218, 226, 238), width=1)
+            dr.line([(bx0 + 2, xheight_y), (bx1 - 2, xheight_y)], fill=(236, 240, 246), width=1)
+            # Small faint label in top-left corner + faint ghost character in center
+            dr.text((bx0 + 3, by0 + 2), ch, fill=(196, 204, 218), font=label_font)
+            dr.text((bx0 + 18, by0 + 22), ch, fill=(238, 241, 246), font=ghost_font)
+
+            svg_parts.append(
+                f'    <rect x="{bx0}" y="{by0}" width="{bx1 - bx0}" height="{by1 - by0}" fill="none" stroke="#e2e8f0" stroke-width="1"/>'
+            )
+            svg_parts.append(
+                f'    <line x1="{bx0 + 2}" y1="{base_y}" x2="{bx1 - 2}" y2="{base_y}" stroke="#dae2ee" stroke-width="1" stroke-dasharray="3,2"/>'
+            )
+            svg_parts.append(
+                f'    <text x="{bx0 + 4}" y="{by0 + 12}" font-size="10" font-weight="bold" fill="#c4ccda">{ch}</text>'
+            )
+
+    svg_parts.append("  </g></svg>")
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    im.save(out_png)
+    out_svg.write_text("\n".join(svg_parts))
+
+
 def main() -> None:
     SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
     bank = extract_font_glyph_bank("/System/Library/Fonts/Noteworthy.ttc", font_size=108)
@@ -233,6 +293,12 @@ def main() -> None:
     for fp, out_p, paper, ink in sheets:
         render_handwriting_sample_sheet(fp, out_p, paper_rgb=paper, ink_rgb=ink)
         print(f"Rendered sample handwriting sheet: {out_p} ({out_p.stat().st_size // 1024} KB)")
+
+    render_printable_template_sheet(
+        SAMPLES_DIR / "scribefont-template-chart.png",
+        SAMPLES_DIR / "scribefont-template-chart.svg",
+    )
+    print("Rendered printable template chart: scribefont-template-chart.png & .svg")
 
 
 if __name__ == "__main__":

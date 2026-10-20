@@ -528,19 +528,36 @@
           <button class="tier-btn" id="btnTier1B" onclick="setTier('tier1b')">Tier 1B: WASM ONNX Int8</button>
         </div>
 
-        <!-- Mode A: Supplied Handwriting Image & Real Internet Specimens -->
+        <!-- Mode A: Supplied Handwriting Image, Printable Template Chart & Real Internet Specimens -->
         <div class="sub-box">
           <div class="box-head">
-            <span>A. Supplied Handwriting Image &amp; Internet Specimens</span>
-            <label style="font-family:var(--font-mono);font-size:10.5px;background:var(--ink);color:#fff;padding:3px 9px;border-radius:5px;cursor:pointer;">
-              Upload Image
+            <span>A. Print Chart / Upload Handwriting Photo</span>
+            <label style="font-family:var(--font-mono);font-size:10.5px;background:var(--ink);color:#fff;padding:4px 10px;border-radius:5px;cursor:pointer;font-weight:700;">
+              📤 Upload Filled Chart / Photo
               <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="handleFileUpload(event)" />
             </label>
           </div>
 
-          <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--muted);margin-bottom:4px;">STUDIO 5×13 SHEETS &amp; REAL WIKIMEDIA COMMONS INTERNET SCANS:</div>
+          <!-- Printable 5x13 Template Chart Bar -->
+          <div style="background:#f3f0e6;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:9px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:800;">🖨 Printable 5×13 Handwriting Chart (65 Glyphs)</span>
+              <span style="font-family:var(--font-mono);font-size:9.5px;background:var(--sage);padding:1px 6px;border-radius:4px;font-weight:700;">DROP-OUT GUIDES</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.35;">
+              1. Print or download the chart &rarr; 2. Write <code>A–Z a–z 0–9 !?</code> in dark pen &rarr; 3. Upload photo/scan above. Light cyan/gray guide boxes drop out automatically.
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" onclick="printTemplateChart()" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:var(--ink);color:#fff;cursor:pointer;">🖨 Print Blank Chart</button>
+              <a href="./samples/scribefont-template-chart.png" download="scribefont-5x13-template-chart.png" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ PNG Chart</a>
+              <a href="./samples/scribefont-template-chart.svg" download="scribefont-5x13-template-chart.svg" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ Vector SVG</a>
+              <button type="button" class="chip-btn" id="chip6" onclick="loadSampleSheet('./samples/sample-filled-template.png', 6)" style="background:var(--butter);font-weight:700;flex:1;text-align:center;">✨ Demo: Filled Chart</button>
+            </div>
+          </div>
+
+          <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--muted);margin-bottom:4px;">FILLED TEMPLATE, STUDIO SHEETS &amp; REAL WIKIMEDIA COMMONS SCANS:</div>
           <div class="sample-chips">
-            <button class="chip-btn active" id="chip0" onclick="loadSampleSheet('./samples/sample-notebook.png', 0)">1. Notebook Sheet (65g)</button>
+            <button class="chip-btn active" id="chip0" onclick="loadSampleSheet('./samples/sample-filled-template.png', 0)">1. 🖨 Filled Template (65g)</button>
             <button class="chip-btn" id="chip1" onclick="loadSampleSheet('./samples/sample-architect.png', 1)">2. Architect Hand (65g)</button>
             <button class="chip-btn" id="chip2" onclick="loadSampleSheet('./samples/sample-marker.png', 2)">3. Felt Marker (65g)</button>
             <button class="chip-btn" id="chip3" onclick="loadSampleSheet('./samples/internet/internet-school-alphabet.jpg', 3)">4. 🌐 Wikimedia School</button>
@@ -714,7 +731,7 @@
     let canvasStrokes = [];
 
     async function loadSampleSheet(url, chipIdx = 0) {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i <= 6; i++) {
         const el = document.getElementById(`chip${i}`);
         if (el) el.classList.toggle('active', i === chipIdx);
       }
@@ -730,7 +747,7 @@
     function handleFileUpload(ev) {
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i <= 6; i++) {
         const el = document.getElementById(`chip${i}`);
         if (el) el.classList.remove('active');
       }
@@ -1019,6 +1036,15 @@
       a.click();
     }
 
+    function printTemplateChart() {
+      const win = window.open('./samples/scribefont-template-chart.svg', '_blank');
+      if (win) {
+        win.addEventListener('load', () => {
+          setTimeout(() => win.print(), 250);
+        });
+      }
+    }
+
     window.setTier = setTier;
     window.loadSampleSheet = loadSampleSheet;
     window.handleFileUpload = handleFileUpload;
@@ -1029,8 +1055,9 @@
     window.renderSpecimen = renderSpecimen;
     window.downloadTTF = downloadTTF;
     window.downloadSVG = downloadSVG;
+    window.printTemplateChart = printTemplateChart;
 
-    loadSampleSheet('./samples/sample-notebook.png', 0);
+    loadSampleSheet('./samples/sample-filled-template.png', 0);
   </script>
 </body>
 </html>
