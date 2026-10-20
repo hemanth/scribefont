@@ -25,6 +25,10 @@
       --font-mono: 'Geist Mono', monospace;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
     body {
       background: var(--canvas);
       color: var(--ink);
@@ -132,12 +136,12 @@
     }
     .workbench {
       display: grid;
-      grid-template-columns: 440px 1fr;
+      grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
       gap: 22px;
       margin-top: 24px;
     }
     @media (max-width: 980px) {
-      .workbench { grid-template-columns: 1fr; }
+      .workbench { grid-template-columns: minmax(0, 1fr); }
     }
     .panel {
       background: var(--card);
@@ -379,6 +383,106 @@
       font-size: 11px;
       text-transform: uppercase;
     }
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+    .table-wrap table.bench-table {
+      border: none;
+      border-radius: 0;
+      min-width: 680px;
+    }
+    .panel {
+      min-width: 0;
+    }
+    @media (max-width: 768px) {
+      nav {
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .nav-links {
+        gap: 12px;
+        font-size: 12.5px;
+        overflow-x: auto;
+        white-space: nowrap;
+        width: 100%;
+        padding-bottom: 2px;
+      }
+      .container {
+        padding: 0 14px;
+        width: 100%;
+        max-width: 100vw;
+      }
+      .hero {
+        padding: 24px 0 18px;
+      }
+      h1 {
+        font-size: clamp(1.55rem, 6.4vw, 2.1rem);
+        word-break: break-word;
+      }
+      .lead {
+        font-size: 14.5px;
+      }
+      .install-pill, .metric-pill {
+        width: 100%;
+        text-align: center;
+        font-size: 11px;
+        white-space: normal;
+        word-break: break-word;
+      }
+      .panel {
+        padding: 14px;
+        width: 100%;
+      }
+      .panel-title {
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 12px;
+      }
+      .telemetry-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .glyph-grid {
+        grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+        gap: 6px;
+      }
+      .box-head {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      #scanCaption {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      input[type="text"], select {
+        font-size: 16px; /* Prevents iOS auto-zoom on focus */
+      }
+    }
+    @media (max-width: 600px) {
+      .tier-switch {
+        grid-template-columns: 1fr;
+      }
+      .sample-chips {
+        grid-template-columns: 1fr;
+      }
+      .btn-row {
+        flex-direction: column;
+      }
+      .chip-btn, .tier-btn, .btn {
+        min-height: 40px;
+      }
+      .nav-links {
+        flex-wrap: wrap;
+        white-space: normal;
+        gap: 8px 14px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -500,7 +604,7 @@
         <input type="text" id="specimenInput" value="The quick brown fox jumps over 2026!" oninput="renderSpecimen()" />
 
         <div class="specimen-box">
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;">
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
             <span>MULTI-CONTOUR QUADRATIC BÉZIER VECTOR RENDER (FILL-RULE: EVENODD)</span>
             <span id="liveFontBadge">NATIVE .TTF FONTFACE LOADED</span>
           </div>
@@ -526,7 +630,7 @@
           </div>
         </div>
 
-        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;">
           <span>MULTI-CONTOUR VECTOR GLYPHS (OUTER BOUNDARY + INNER COUNTER HOLES)</span>
           <span>GREEN BADGE = TRACED FROM IMAGE / CANVAS</span>
         </div>
@@ -537,6 +641,7 @@
     <section id="benchmarks" class="section-block">
       <div class="eyebrow">EMPIRICAL EVALUATION (B=1,000 BOOTSTRAP 95% CIs)</div>
       <h2>3-Tier Benchmark Matrix</h2>
+      <div class="table-wrap">
       <table class="bench-table">
         <thead>
           <tr>
@@ -583,6 +688,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </section>
 
     <section id="blueprint" class="section-block">

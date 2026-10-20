@@ -41,11 +41,20 @@
       border-radius: 14px;
       padding: 22px;
       margin-bottom: 18px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     table {
       width: 100%;
+      min-width: 660px;
       border-collapse: collapse;
       font-size: 14px;
+    }
+    @media (max-width: 640px) {
+      body { padding: 24px 14px; }
+      h1 { font-size: 32px; }
+      p.lead { font-size: 15px; }
+      .card { padding: 12px; }
     }
     th, td {
       padding: 12px 14px;
