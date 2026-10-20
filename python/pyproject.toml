@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "scribefont"
-version = "0.1.0"
+version = "0.1.1"
 description = "Single-pass handwriting-to-font synthesis, calligrapher style extraction, Bézier glyph vectorization, and zero-dependency binary TrueType (.ttf) compilation."
 readme = "README.md"
 requires-python = ">=3.10"

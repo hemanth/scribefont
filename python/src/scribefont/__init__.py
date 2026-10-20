@@ -22,4 +22,4 @@ __all__ = [
     "synthesize_glyph_fast",
     "verify_truetype_bytes",
 ]
-__version__ = "0.1.0"
+__version__ = "0.1.1"

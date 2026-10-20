@@ -7,48 +7,15 @@ import time
 from pathlib import Path
 from typing import Any
 
-CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-CHAR_TO_ID = {c: i for i, c in enumerate(CHARSET)}
+from .skeletons import (
+    CHARSET,
+    CHAR_TO_ID,
+    GLYPH_STROKES,
+    canonical_skeleton_points,
+    split_16pts_into_strokes,
+)
 
 DEFAULT_STYLE = [4.0, 58.0, 0.70, 1.00, 0.55, 2.0, 0.15, 0.25]
-
-
-def canonical_skeleton_points(ch: str) -> list[tuple[float, float]]:
-    """Return 16 deterministic normalized anchor points in [0, 1] x [0, 1] for character `ch`."""
-    idx = CHAR_TO_ID.get(ch, 0)
-    is_upper = "A" <= ch <= "Z"
-    is_digit = "0" <= ch <= "9"
-
-    y_bot = 0.08 if ch in "gjpqy" else 0.22
-    y_top = 0.90 if (is_upper or is_digit or ch in "bdfhklt") else 0.70
-    y_mid = 0.5 * (y_bot + y_top)
-
-    if ch in "Iijl1":
-        x_lo, x_hi = 0.40, 0.60
-    elif ch in "MWmw":
-        x_lo, x_hi = 0.14, 0.86
-    else:
-        x_lo, x_hi = 0.22, 0.78
-
-    pts: list[tuple[float, float]] = []
-    phase = (idx * 0.61803398875) * 2.0 * math.pi
-    freq_x = 1.0 + (idx % 5) * 0.5
-    freq_y = 1.0 + ((idx // 5) % 4) * 0.5
-
-    for k in range(16):
-        t = k / 16.0
-        ang = 2.0 * math.pi * t
-        rx = 0.5 * (x_hi - x_lo)
-        ry = 0.5 * (y_top - y_bot)
-        cx = 0.5 * (x_lo + x_hi)
-        cy = y_mid
-
-        hx = 0.18 * rx * math.sin(freq_x * ang + phase)
-        hy = 0.18 * ry * math.cos(freq_y * ang - phase * 0.5)
-        px = max(0.05, min(0.95, cx + rx * math.cos(ang) + hx))
-        py = max(0.02, min(0.98, cy + ry * math.sin(ang) + hy))
-        pts.append((round(px, 5), round(py, 5)))
-    return pts
 
 
 def denormalize_style_feats(style_feats: list[float]) -> list[float]:
@@ -105,19 +72,25 @@ def extract_biometrics_from_strokes(sample: Any) -> list[float]:
     return list(DEFAULT_STYLE)
 
 
-def contour_to_svg_path(contour_upm: list[list[int]]) -> str:
-    """Fit smooth quadratic Bézier SVG path (`M ... Q ... Z`) through contour anchor points."""
+def contour_to_svg_path(contour_upm: list[list[int]], ch: str = "A") -> str:
+    """Fit smooth open quadratic Bézier SVG strokes (`M p0 Q ... L p_last`) per character stroke."""
     if not contour_upm:
         return ""
-    n = len(contour_upm)
-    parts = [f"M {contour_upm[0][0]} {contour_upm[0][1]}"]
-    for i in range(n):
-        p_curr = contour_upm[i]
-        p_next = contour_upm[(i + 1) % n]
-        mid_x = int(round(0.5 * (p_curr[0] + p_next[0])))
-        mid_y = int(round(0.5 * (p_curr[1] + p_next[1])))
-        parts.append(f"Q {p_curr[0]} {p_curr[1]} {mid_x} {mid_y}")
-    parts.append("Z")
+    strokes = split_16pts_into_strokes(ch, contour_upm)
+    parts: list[str] = []
+    for stroke in strokes:
+        if not stroke:
+            continue
+        pts = [[int(round(p[0])), int(round(p[1]))] for p in stroke]
+        parts.append(f"M {pts[0][0]} {pts[0][1]}")
+        if len(pts) == 2:
+            parts.append(f"L {pts[1][0]} {pts[1][1]}")
+        else:
+            for i in range(1, len(pts) - 1):
+                mid_x = int(round(0.5 * (pts[i][0] + pts[i + 1][0])))
+                mid_y = int(round(0.5 * (pts[i][1] + pts[i + 1][1])))
+                parts.append(f"Q {pts[i][0]} {pts[i][1]} {mid_x} {mid_y}")
+            parts.append(f"L {pts[-1][0]} {pts[-1][1]}")
     return " ".join(parts)
 
 
@@ -169,10 +142,10 @@ def synthesize_glyph_fast(
     for i, (bx, by) in enumerate(base_pts):
         dy = (by - 0.22) * y_scale + 0.22 + y_jitter_norm
         dx = 0.5 + (bx - 0.5) * w_scale + (dy - 0.5) * slant_tan * 0.35
-        rad_mod = (roundness - 0.5) * 0.04 * math.cos(i * math.pi / 4.0)
-        flare_mod = flare * 0.025 if i in (0, 4, 8, 12) else 0.0
+        rad_mod = (roundness - 0.5) * 0.025 * math.cos(i * math.pi / 4.0)
+        flare_mod = flare * 0.02 if i in (0, 15) else 0.0
         nx = max(0.02, min(0.98, dx + rad_mod + flare_mod))
-        ny = max(0.01, min(0.99, dy - rad_mod * 0.5))
+        ny = max(0.01, min(0.99, dy - rad_mod * 0.4))
         contour_norm.append([round(nx, 5), round(ny, 5)])
 
         ux = int(round(nx * upm * 0.68))
@@ -199,13 +172,14 @@ def synthesize_glyph_fast(
         "confidence": round(1.0 - p_missing, 4),
         "contour_norm": contour_norm,
         "contour_upm": contour_upm,
+        "strokes_upm": split_16pts_into_strokes(ch, contour_upm),
         "bbox": [xmin, ymin, xmax, ymax],
         "lsb": lsb,
         "advance_width": advance_width,
         "stroke_width": round(stroke_w, 2),
         "slant_deg": round(slant_deg, 2),
         "kern_av": kern_av,
-        "svg_path": contour_to_svg_path(contour_upm),
+        "svg_path": contour_to_svg_path(contour_upm, ch),
         "verified": verified,
         "value": ch,
     }

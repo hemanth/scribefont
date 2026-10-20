@@ -10,8 +10,13 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 
-CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-CHAR_TO_ID = {c: i for i, c in enumerate(CHARSET)}
+from glyph_skeletons import (
+    CHARSET,
+    CHAR_TO_ID,
+    GLYPH_STROKES,
+    canonical_skeleton_points,
+    split_16pts_into_strokes,
+)
 
 # 12 canonical calligrapher writer archetypes with 8 biometric style dimensions:
 # [slant_deg, stroke_width_upm, x_height_ratio, width_scale, roundness, baseline_jitter, contrast, serif_flare]
@@ -79,49 +84,6 @@ WRITER_ARCHETYPES: list[dict[str, Any]] = [
 ]
 
 
-def canonical_skeleton_points(ch: str) -> list[tuple[float, float]]:
-    """Return 16 deterministic normalized anchor points in [0, 1] x [0, 1] for character `ch`."""
-    idx = CHAR_TO_ID.get(ch, 0)
-    is_upper = "A" <= ch <= "Z"
-    is_lower = "a" <= ch <= "z"
-    is_digit = "0" <= ch <= "9"
-
-    # Base vertical bounds in normalized [0, 1] space
-    y_bot = 0.08 if ch in "gjpqy" else 0.22
-    y_top = 0.90 if (is_upper or is_digit or ch in "bdfhklt") else 0.70
-    y_mid = 0.5 * (y_bot + y_top)
-
-    # Narrow vs wide character intrinsic factor
-    if ch in "Iijl1":
-        x_lo, x_hi = 0.40, 0.60
-    elif ch in "MWmw":
-        x_lo, x_hi = 0.14, 0.86
-    else:
-        x_lo, x_hi = 0.22, 0.78
-
-    pts: list[tuple[float, float]] = []
-    # Construct a smooth 16-point closed/structured trajectory signature per character
-    phase = (idx * 0.61803398875) * 2.0 * math.pi
-    freq_x = 1.0 + (idx % 5) * 0.5
-    freq_y = 1.0 + ((idx // 5) % 4) * 0.5
-
-    for k in range(16):
-        t = k / 16.0
-        ang = 2.0 * math.pi * t
-        # Combine elliptical envelope with character-specific harmonic signature
-        rx = 0.5 * (x_hi - x_lo)
-        ry = 0.5 * (y_top - y_bot)
-        cx = 0.5 * (x_lo + x_hi)
-        cy = y_mid
-
-        hx = 0.18 * rx * math.sin(freq_x * ang + phase)
-        hy = 0.18 * ry * math.cos(freq_y * ang - phase * 0.5)
-        px = max(0.05, min(0.95, cx + rx * math.cos(ang) + hx))
-        py = max(0.02, min(0.98, cy + ry * math.sin(ang) + hy))
-        pts.append((round(px, 5), round(py, 5)))
-    return pts
-
-
 def apply_writer_style_to_glyph(
     ch: str,
     style: list[float],
@@ -142,14 +104,12 @@ def apply_writer_style_to_glyph(
     contour_upm: list[list[int]] = []
 
     for i, (bx, by) in enumerate(base_pts):
-        # Apply x-height scaling, width scale, roundness harmonic smoothing, and slant shear
         dy = (by - 0.22) * y_scale + 0.22 + y_jitter_norm
         dx = 0.5 + (bx - 0.5) * w_scale + (dy - 0.5) * slant_tan * 0.35
-        # Roundness & flare perturbation
-        rad_mod = (roundness - 0.5) * 0.04 * math.cos(i * math.pi / 4.0)
-        flare_mod = flare * 0.025 if i in (0, 4, 8, 12) else 0.0
+        rad_mod = (roundness - 0.5) * 0.025 * math.cos(i * math.pi / 4.0)
+        flare_mod = flare * 0.02 if i in (0, 15) else 0.0
         nx = max(0.02, min(0.98, dx + rad_mod + flare_mod))
-        ny = max(0.01, min(0.99, dy - rad_mod * 0.5))
+        ny = max(0.01, min(0.99, dy - rad_mod * 0.4))
         contour_norm.append([round(nx, 5), round(ny, 5)])
 
         ux = int(round(nx * upm * 0.68))
@@ -163,13 +123,11 @@ def apply_writer_style_to_glyph(
     lsb = max(20, int(round(xmin * 0.85)))
     bbox_w = max(120, xmax - xmin + int(stroke_w * 0.8))
     advance_width = int(round(lsb + bbox_w + max(28.0, stroke_w * 0.55)))
-
-    # Compute kerning pair adjustment for canonical pair (e.g. 'AV', 'To')
     kern_av = int(round(-45.0 * w_scale - abs(slant_deg) * 1.2 - flare * 12.0))
 
     return {
         "char": ch,
-        "char_id": CHAR_TO_ID[ch],
+        "char_id": CHAR_TO_ID.get(ch, 0),
         "contour_norm": contour_norm,
         "contour_upm": contour_upm,
         "bbox": [xmin, ymin, xmax, ymax],
@@ -189,36 +147,37 @@ def render_glyph_patch_16x16(
     noise_std: float = 0.0,
     rng: random.Random | None = None,
     blank: bool = False,
+    ch: str = "A",
 ) -> list[float]:
-    """Rasterize a 16x16 signed-distance / ink intensity patch (256 floats in [0, 1])."""
+    """Rasterize a 16x16 signed-distance / ink intensity patch (256 floats in [0, 1]) over open strokes."""
     r = rng or random.Random(42)
     if blank:
-        # Stray smudge / blank cell
         return [round(max(0.0, min(0.22, r.gauss(0.03, 0.04))), 4) for _ in range(256)]
 
+    strokes = split_16pts_into_strokes(ch, contour_norm)
     radius = max(0.045, min(0.14, stroke_w / 950.0))
     grid: list[float] = []
-    n_pts = len(contour_norm)
     for gy in range(16):
         py = (15 - gy + 0.5) / 16.0
         for gx in range(16):
             px = (gx + 0.5) / 16.0
             min_d = 9.0
             best_seg = 0
-            for i in range(n_pts):
-                ax, ay = contour_norm[i]
-                bx, by = contour_norm[(i + 1) % n_pts]
-                vx, vy = bx - ax, by - ay
-                wx, wy = px - ax, py - ay
-                c1 = vx * wx + vy * wy
-                c2 = vx * vx + vy * vy
-                t = 0.0 if c2 <= 1e-9 else max(0.0, min(1.0, c1 / c2))
-                proj_x = ax + t * vx
-                proj_y = ay + t * vy
-                d = math.hypot(px - proj_x, py - proj_y)
-                if d < min_d:
-                    min_d = d
-                    best_seg = i
+            for s_idx, stroke in enumerate(strokes):
+                for i in range(len(stroke) - 1):
+                    ax, ay = stroke[i]
+                    bx, by = stroke[i + 1]
+                    vx, vy = bx - ax, by - ay
+                    wx, wy = px - ax, py - ay
+                    c1 = vx * wx + vy * wy
+                    c2 = vx * vx + vy * vy
+                    t = 0.0 if c2 <= 1e-9 else max(0.0, min(1.0, c1 / c2))
+                    proj_x = ax + t * vx
+                    proj_y = ay + t * vy
+                    d = math.hypot(px - proj_x, py - proj_y)
+                    if d < min_d:
+                        min_d = d
+                        best_seg = i + s_idx
             local_r = radius * (1.0 - 0.35 * contrast * (best_seg % 2))
             ink = 1.0 / (1.0 + math.exp((min_d - local_r) / 0.025))
             if noise_std > 0.0:

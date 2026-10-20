@@ -26,17 +26,17 @@
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 100.0,
-      "contour_mae_upm": 2.14,
-      "advance_width_mae_upm": 10.61,
+      "contour_mae_upm": 2.38,
+      "advance_width_mae_upm": 13.93,
       "p_missing_auroc": 1.0,
-      "p_missing_ece": 0.00759,
-      "p_missing_brier": 0.00113,
+      "p_missing_ece": 0.00276,
+      "p_missing_brier": 0.00014,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 3772,
-      "latency_p50_ms": 7.6123,
-      "latency_p95_ms": 11.4627,
-      "latency_p99_ms": 12.017
+      "latency_p50_ms": 6.1797,
+      "latency_p95_ms": 8.3667,
+      "latency_p99_ms": 9.2688
     },
     "tier1b_onnx_int8": {
       "overall_accuracy_pct": 100.0,
@@ -51,42 +51,42 @@
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 100.0,
-      "contour_mae_upm": 2.15,
-      "advance_width_mae_upm": 10.63,
+      "contour_mae_upm": 2.39,
+      "advance_width_mae_upm": 14.02,
       "p_missing_auroc": 1.0,
-      "p_missing_ece": 0.00749,
-      "p_missing_brier": 0.00109,
+      "p_missing_ece": 0.00282,
+      "p_missing_brier": 0.00015,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 3772,
-      "latency_p50_ms": 1.2025,
-      "latency_p95_ms": 1.9507,
-      "latency_p99_ms": 2.046
+      "latency_p50_ms": 1.2708,
+      "latency_p95_ms": 1.5253,
+      "latency_p99_ms": 1.5695
     },
     "tier2_zero_dep": {
-      "overall_accuracy_pct": 73.33,
+      "overall_accuracy_pct": 80.0,
       "overall_ci95": [
-        61.67,
-        83.33
+        70.0,
+        90.0
       ],
-      "glyph_fidelity_match_pct": 46.67,
+      "glyph_fidelity_match_pct": 60.0,
       "glyph_fidelity_ci95": [
-        26.67,
-        63.33
+        40.0,
+        76.67
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 16.67,
-      "contour_mae_upm": 12.71,
-      "advance_width_mae_upm": 39.67,
+      "contour_mae_upm": 11.13,
+      "advance_width_mae_upm": 35.5,
       "p_missing_auroc": 1.0,
       "p_missing_ece": 0.0006,
       "p_missing_brier": 0.0,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 3772,
-      "latency_p50_ms": 0.0307,
-      "latency_p95_ms": 0.033,
-      "latency_p99_ms": 0.0397
+      "latency_p50_ms": 0.0539,
+      "latency_p95_ms": 0.0632,
+      "latency_p99_ms": 0.0716
     }
   },
   "suite_b_structured_font": {
@@ -103,17 +103,17 @@
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 100.0,
-      "contour_mae_upm": 1.11,
-      "advance_width_mae_upm": 2.43,
+      "contour_mae_upm": 0.98,
+      "advance_width_mae_upm": 2.44,
       "p_missing_auroc": 1.0,
-      "p_missing_ece": 0.00018,
+      "p_missing_ece": 0.00012,
       "p_missing_brier": 0.0,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 7292,
-      "latency_p50_ms": 4.3805,
-      "latency_p95_ms": 6.3712,
-      "latency_p99_ms": 6.7869
+      "latency_p50_ms": 6.035,
+      "latency_p95_ms": 9.1311,
+      "latency_p99_ms": 9.8252
     },
     "tier1b_onnx_int8": {
       "overall_accuracy_pct": 100.0,
@@ -128,17 +128,17 @@
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 100.0,
-      "contour_mae_upm": 1.12,
-      "advance_width_mae_upm": 2.39,
+      "contour_mae_upm": 0.98,
+      "advance_width_mae_upm": 2.44,
       "p_missing_auroc": 1.0,
-      "p_missing_ece": 0.00019,
+      "p_missing_ece": 0.00012,
       "p_missing_brier": 0.0,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 7292,
-      "latency_p50_ms": 0.9642,
-      "latency_p95_ms": 1.5815,
-      "latency_p99_ms": 1.6138
+      "latency_p50_ms": 1.3858,
+      "latency_p95_ms": 1.9749,
+      "latency_p99_ms": 2.3453
     },
     "tier2_zero_dep": {
       "overall_accuracy_pct": 100.0,
@@ -161,9 +161,9 @@
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 7292,
-      "latency_p50_ms": 0.0317,
-      "latency_p95_ms": 0.0377,
-      "latency_p99_ms": 0.0402
+      "latency_p50_ms": 0.0747,
+      "latency_p95_ms": 0.083,
+      "latency_p99_ms": 0.0894
     }
   },
   "suite_c_adversarial_ink": {
@@ -180,17 +180,17 @@
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 100.0,
-      "contour_mae_upm": 1.58,
-      "advance_width_mae_upm": 1.86,
+      "contour_mae_upm": 1.16,
+      "advance_width_mae_upm": 4.25,
       "p_missing_auroc": 1.0,
-      "p_missing_ece": 0.00104,
+      "p_missing_ece": 0.00077,
       "p_missing_brier": 0.0,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 1132,
-      "latency_p50_ms": 4.8772,
-      "latency_p95_ms": 8.2963,
-      "latency_p99_ms": 8.7653
+      "latency_p50_ms": 9.268,
+      "latency_p95_ms": 9.7605,
+      "latency_p99_ms": 10.1419
     },
     "tier1b_onnx_int8": {
       "overall_accuracy_pct": 100.0,
@@ -205,17 +205,17 @@
       ],
       "missing_abstention_pct": 100.0,
       "writer_style_id_pct": 100.0,
-      "contour_mae_upm": 1.58,
-      "advance_width_mae_upm": 1.8,
+      "contour_mae_upm": 1.21,
+      "advance_width_mae_upm": 4.15,
       "p_missing_auroc": 1.0,
-      "p_missing_ece": 0.00106,
+      "p_missing_ece": 0.00077,
       "p_missing_brier": 0.0,
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 1132,
-      "latency_p50_ms": 1.0024,
-      "latency_p95_ms": 1.1337,
-      "latency_p99_ms": 1.3229
+      "latency_p50_ms": 1.6363,
+      "latency_p95_ms": 1.6494,
+      "latency_p99_ms": 1.8655
     },
     "tier2_zero_dep": {
       "overall_accuracy_pct": 100.0,
@@ -238,9 +238,9 @@
       "opentype_invariants_pct": 100.0,
       "ttf_binary_valid": true,
       "ttf_byte_length": 1132,
-      "latency_p50_ms": 0.0315,
-      "latency_p95_ms": 0.0349,
-      "latency_p99_ms": 0.0417
+      "latency_p50_ms": 0.0733,
+      "latency_p95_ms": 0.0795,
+      "latency_p99_ms": 0.0955
     }
   }
 }
