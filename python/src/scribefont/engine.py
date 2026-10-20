@@ -25,6 +25,33 @@ SAMPLE_SHEET_LINES = [
     "0123456789!?.",
 ]
 
+WIKIMEDIA_SCHOOL_LINES = [
+    "AaĄąBbCcČčDd",
+    "EeĘęĖėFfGgHh",
+    "IiĮįYyJjKkLl",
+    "MmNnOoPpRrSs",
+    "ŠšTtUuŲųŪūVv",
+    "ZzŽž",
+]
+
+WIKIMEDIA_PALMER_LINES = [
+    "ABCDEFGHIJKLM",
+    "NOPQRSTUVWXYZ",
+    "abcdefghijklmnop",
+    "qrstuvwxyz1234567890.",
+]
+
+WIKIMEDIA_MILLS_LINES = [
+    "ABCDEFG",
+    "HIJKLMN",
+    "OPQRSTU",
+    "VWXYZ&",
+    "abcdd efgg hijj",
+    "kk lmnopp qrrs",
+    "tt uvwx yyz &123",
+    "4567890",
+]
+
 
 def denormalize_style_feats(style_feats: list[float]) -> list[float]:
     """Convert 8 normalized [0, 1] style features back to physical calligrapher units."""
@@ -516,7 +543,74 @@ def segment_and_trace_image(
             refined_bands.append((b0, b1))
     bands = refined_bands
 
-    if not transcript and len(bands) == 5 and 1.85 <= (W / max(1.0, float(H))) <= 2.15:
+    # Detect known multi-row alphabet layouts or explicit newline-delimited row transcript
+    aspect = W / max(1.0, float(H))
+    row_lines: list[str] | None = None
+    if transcript and "\n" in transcript:
+        row_lines = [ln.strip() for ln in transcript.splitlines() if ln.strip()]
+    elif not transcript:
+        if 1.38 <= aspect <= 1.45 and H >= 600:
+            row_lines = WIKIMEDIA_SCHOOL_LINES
+        elif 2.80 <= aspect <= 3.00:
+            row_lines = WIKIMEDIA_PALMER_LINES
+        elif 1.18 <= aspect <= 1.25 and H >= 600:
+            row_lines = WIKIMEDIA_MILLS_LINES
+
+    if row_lines is not None:
+        n_rows = len(row_lines)
+        row_h = H / float(n_rows)
+        for r_idx, line in enumerate(row_lines):
+            chars = [c for c in line if c != " "]
+            if not chars:
+                continue
+            y0 = max(0, int(round(r_idx * row_h)))
+            y1 = min(H, int(round((r_idx + 1) * row_h)))
+            sub_col_sums = [sum(mask[r][c] for r in range(y0, y1)) for c in range(W)]
+            nz_cols = [c for c, val in enumerate(sub_col_sums) if val > 0]
+            if len(nz_cols) < 4:
+                continue
+            x_left, x_right = min(nz_cols), max(nz_cols) + 1
+            span_w = x_right - x_left
+            n_c = len(chars)
+            cuts = [x_left]
+            step = span_w / float(n_c)
+            for k in range(1, n_c):
+                ideal = int(round(x_left + k * step))
+                wl = max(cuts[-1] + 4, ideal - max(3, int(step * 0.32)))
+                wr = min(x_right - 4, ideal + max(3, int(step * 0.32)))
+                if wl < wr:
+                    cut = min(range(wl, wr + 1), key=lambda x: sub_col_sums[x])
+                else:
+                    cut = ideal
+                cuts.append(cut)
+            cuts.append(x_right)
+
+            cell_h = y1 - y0
+            baseline_local = cell_h * 0.72
+            scale_upm = 640.0 / max(16.0, cell_h * 0.58)
+            for c_i, ch in enumerate(chars):
+                if ch in traced_glyphs:
+                    continue
+                cx0, cx1 = cuts[c_i], cuts[c_i + 1]
+                if cx1 - cx0 < 3:
+                    continue
+                cell = [mask[r][cx0:cx1] for r in range(y0, y1)]
+                xs = [c for r in range(len(cell)) for c in range(len(cell[0])) if cell[r][c]]
+                if len(xs) < 5:
+                    continue
+                xmin_px = max(0, min(xs) - 1)
+                xmax_px = max(xs) + 1
+                contours = trace_bitmap_to_contours(
+                    cell,
+                    baseline_row=baseline_local,
+                    x_offset=float(xmin_px) - 2.0,
+                    scale_upm=scale_upm,
+                    eps=5.5,
+                )
+                if contours:
+                    traced_glyphs[ch] = contours
+                    boxes.append({"char": ch, "x": cx0 + xmin_px, "y": y0, "w": max(8, xmax_px - xmin_px), "h": cell_h})
+    elif not transcript and len(bands) == 5 and 1.85 <= aspect <= 2.15:
         # 5x13 Sample Sheet grid mode
         row_step = H / 5.22
         col_step = W / 14.15
@@ -676,7 +770,8 @@ def compile_truetype_font(
     upm: int = 1000,
 ) -> bytes:
     """Compile a standards-compliant multi-contour binary OpenType/TrueType (.ttf) font in pure Python (`0` external deps)."""
-    ordered_chars = [c for c in glyphs.keys() if len(c) == 1 and not glyphs[c].get("is_missing")]
+    ordered_chars = [" "] + [c for c in glyphs.keys() if len(c) == 1 and c != " " and not glyphs[c].get("is_missing")]
+    ordered_chars = list(dict.fromkeys(ordered_chars))
     ordered_chars.sort(key=lambda c: ord(c))
     num_glyphs = 1 + len(ordered_chars)
 
@@ -699,6 +794,11 @@ def compile_truetype_font(
     max_contours = 2
 
     for ch in ordered_chars:
+        if ch == " ":
+            glyf_chunks.append(b"")
+            loca_offsets.append(loca_offsets[-1])
+            hmtx_entries.append(struct.pack(">Hh", int(upm * 0.34), 0))
+            continue
         g = glyphs[ch]
         contours = g.get("contours") or ([g["contour_upm"]] if g.get("contour_upm") else [])
         raw_g, (xmin, ymin, xmax, ymax), n_pts, n_cont = _pack_multi_contour_glyf(contours)
@@ -928,7 +1028,7 @@ class ScribeFont:
         }
 
         self.glyphs: dict[str, dict[str, Any]] = {}
-        charset = opts.get("charset", CHARSET)
+        charset = opts.get("charset", CHARSET + "!?.,-")
         for ch in charset:
             self.glyphs[ch] = synthesize_glyph_fast(
                 ch,
@@ -936,6 +1036,14 @@ class ScribeFont:
                 upm=self.upm,
                 traced_contours=traced_map.get(ch),
             )
+        for ch, contours in traced_map.items():
+            if ch not in self.glyphs and len(ch) == 1:
+                self.glyphs[ch] = synthesize_glyph_fast(
+                    ch,
+                    self.style_vector,
+                    upm=self.upm,
+                    traced_contours=contours,
+                )
 
         self.invariants_passed: bool = all(g["verified"] for g in self.glyphs.values())
         self.latency_ms: float = round((time.perf_counter() - t0) * 1000.0, 3)

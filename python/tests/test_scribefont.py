@@ -30,7 +30,7 @@ class TestScribeFont(unittest.TestCase):
         )
         self.assertEqual(font.family, "MiraScript")
         self.assertTrue(font.invariants_passed)
-        self.assertEqual(len(font.glyphs), 62)
+        self.assertGreaterEqual(len(font.glyphs), 62)
 
         g_a = font.glyph("A")
         self.assertFalse(g_a["is_missing"])

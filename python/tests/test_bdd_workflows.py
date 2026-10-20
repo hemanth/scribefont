@@ -31,6 +31,15 @@ class TestBDDHandwritingWorkflows(unittest.TestCase):
         self.assertTrue(chk["valid"])
         self.assertTrue(chk["checksum_ok"])
 
+        # Prove that FreeType (PIL.ImageFont.truetype) loads the binary .ttf and renders real ink pixels
+        import io
+        from PIL import Image, ImageDraw, ImageFont
+        ft_font = ImageFont.truetype(io.BytesIO(ttf_bytes), 42)
+        im = Image.new("L", (400, 70), 255)
+        ImageDraw.Draw(im).text((12, 10), "ABC abc 123!", fill=0, font=ft_font)
+        dark_pixels = sum(1 for px in im.tobytes() if px < 128)
+        self.assertGreater(dark_pixels, 150)
+
     def test_scenario_2_wikimedia_mills_1909_specimen(self) -> None:
         """Given a real internet scan of E. C. Mills' 1909 American Business Writing specimen,
         When converted via scribefont.from_image,
