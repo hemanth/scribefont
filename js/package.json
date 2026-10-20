@@ -1,7 +1,7 @@
 {
   "name": "scribefont",
-  "version": "0.2.0",
-  "description": "Handwriting image-to-font multi-contour vectorizer, calligrapher style extraction, and zero-dependency binary TrueType (.ttf) compilation.",
+  "version": "0.3.0",
+  "description": "Handwriting image-to-font & web canvas multi-contour vectorizer, calligrapher style extraction, and zero-dependency binary TrueType (.ttf) compilation.",
   "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "test": "node --test test/index.test.js"
+    "test": "node --test test/index.test.js test/bdd_workflows.test.js"
   },
   "files": [
     "src",

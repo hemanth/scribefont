@@ -8,6 +8,7 @@ from .engine import (
     compile_truetype_font,
     contours_to_svg_d,
     denormalize_style_feats,
+    rasterize_strokes_to_image,
     scribefont,
     segment_and_trace_image,
     synthesize_glyph_fast,
@@ -22,10 +23,11 @@ __all__ = [
     "compile_truetype_font",
     "contours_to_svg_d",
     "denormalize_style_feats",
+    "rasterize_strokes_to_image",
     "scribefont",
     "segment_and_trace_image",
     "synthesize_glyph_fast",
     "trace_bitmap_to_contours",
     "verify_truetype_bytes",
 ]
-__version__ = "0.2.0"
+__version__ = "0.3.0"

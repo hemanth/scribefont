@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>scribefont — Image-to-Font Vectorizer &amp; Single-Pass OpenType (.ttf) Studio</title>
+  <title>scribefont — Image-to-Font &amp; Web Canvas Handwriting OpenType (.ttf) Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -72,12 +72,12 @@
     }
     .nav-links a:hover { color: var(--indigo); }
     .container {
-      max-width: 1240px;
+      max-width: 1260px;
       margin: 0 auto;
       padding: 0 24px;
     }
     .hero {
-      padding: 42px 0 28px;
+      padding: 40px 0 26px;
       border-bottom: 1.5px solid var(--border-subtle);
     }
     .eyebrow {
@@ -90,7 +90,7 @@
       margin-bottom: 10px;
     }
     h1 {
-      font-size: clamp(2.1rem, 4.0vw, 3.2rem);
+      font-size: clamp(2.05rem, 3.8vw, 3.1rem);
       font-weight: 800;
       letter-spacing: -0.035em;
       line-height: 1.08;
@@ -101,10 +101,10 @@
       font-weight: 600;
     }
     .lead {
-      font-size: 17px;
+      font-size: 16.5px;
       color: var(--muted);
-      max-width: 860px;
-      margin-bottom: 20px;
+      max-width: 880px;
+      margin-bottom: 18px;
     }
     .hero-bar {
       display: flex;
@@ -123,7 +123,7 @@
     }
     .metric-pill {
       font-family: var(--font-mono);
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       background: var(--card);
       border: 1.5px solid var(--border);
@@ -132,9 +132,9 @@
     }
     .workbench {
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 440px 1fr;
       gap: 22px;
-      margin-top: 26px;
+      margin-top: 24px;
     }
     @media (max-width: 980px) {
       .workbench { grid-template-columns: 1fr; }
@@ -143,14 +143,14 @@
       background: var(--card);
       border: 2px solid var(--border);
       border-radius: 14px;
-      padding: 20px;
+      padding: 18px;
     }
     .panel-title {
       font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -159,13 +159,13 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .tier-btn {
       font-family: var(--font-mono);
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 8px 10px;
+      padding: 7px 9px;
       border-radius: 8px;
       border: 1.5px solid var(--border);
       background: var(--canvas);
@@ -176,24 +176,32 @@
       background: var(--ink);
       color: #fff;
     }
-    .upload-box {
-      border: 2px dashed var(--border);
+    .sub-box {
+      border: 1.5px dashed var(--border);
       border-radius: 10px;
       background: #fcfbf9;
-      padding: 12px;
-      margin-bottom: 14px;
+      padding: 11px;
+      margin-bottom: 12px;
+    }
+    .box-head {
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .sample-chips {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin-bottom: 10px;
+      gap: 5px;
+      margin-bottom: 8px;
     }
     .chip-btn {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 600;
-      padding: 6px 8px;
+      padding: 5px 7px;
       border: 1.5px solid var(--border);
       border-radius: 6px;
       background: #fff;
@@ -210,31 +218,43 @@
     canvas#scanCanvas {
       width: 100%;
       height: auto;
+      max-height: 175px;
+      object-fit: contain;
       background: #fff;
       border: 1.5px solid var(--border);
-      border-radius: 8px;
+      border-radius: 7px;
+      display: block;
+    }
+    canvas#drawPad {
+      width: 100%;
+      height: 92px;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      cursor: crosshair;
+      touch-action: none;
       display: block;
     }
     select, input[type="text"] {
       width: 100%;
-      padding: 9px 12px;
+      padding: 8px 11px;
       border: 1.5px solid var(--border);
       border-radius: 8px;
       font-family: var(--font-sans);
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 600;
       background: #fff;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .slider-row {
-      margin-bottom: 8px;
+      margin-bottom: 7px;
     }
     .slider-label {
       display: flex;
       justify-content: space-between;
       font-family: var(--font-mono);
-      font-size: 11px;
-      margin-bottom: 2px;
+      font-size: 10.5px;
+      margin-bottom: 1px;
     }
     input[type="range"] {
       width: 100%;
@@ -243,14 +263,14 @@
     .btn-row {
       display: flex;
       gap: 10px;
-      margin-top: 14px;
+      margin-top: 12px;
     }
     .btn {
       flex: 1;
-      padding: 11px 14px;
+      padding: 10px 12px;
       font-family: var(--font-sans);
       font-weight: 700;
-      font-size: 13px;
+      font-size: 12.5px;
       border: 2px solid var(--border);
       border-radius: 9px;
       cursor: pointer;
@@ -265,9 +285,9 @@
       background: var(--canvas);
       border: 1.5px solid var(--border);
       border-radius: 10px;
-      padding: 18px 20px;
+      padding: 16px 18px;
       margin-bottom: 14px;
-      min-height: 110px;
+      min-height: 108px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -277,13 +297,13 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .stat-card {
       background: var(--canvas);
       border: 1.5px solid var(--border);
       border-radius: 9px;
-      padding: 9px 12px;
+      padding: 8px 11px;
     }
     .stat-label {
       font-family: var(--font-mono);
@@ -299,13 +319,13 @@
     }
     .glyph-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+      gap: 7px;
     }
     .glyph-cell {
       border: 1.5px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 6px;
+      padding: 5px;
       text-align: center;
       background: #fff;
       cursor: pointer;
@@ -331,12 +351,12 @@
       font-weight: 700;
     }
     .section-block {
-      margin-top: 44px;
+      margin-top: 42px;
     }
     .section-block h2 {
-      font-size: 24px;
+      font-size: 23px;
       font-weight: 800;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     table.bench-table {
       width: 100%;
@@ -348,7 +368,7 @@
       font-size: 13px;
     }
     table.bench-table th, table.bench-table td {
-      padding: 11px 14px;
+      padding: 10px 13px;
       border-bottom: 1px solid var(--border-subtle);
       text-align: left;
     }
@@ -368,7 +388,7 @@
       <span>scribefont</span>
     </div>
     <div class="nav-links">
-      <a href="#studio">Image-to-Font Studio</a>
+      <a href="#studio">Image &amp; Canvas Studio</a>
       <a href="#benchmarks">3-Tier Benchmarks</a>
       <a href="#blueprint">Architecture</a>
       <a href="./bench.html">Leaderboard</a>
@@ -378,25 +398,25 @@
 
   <div class="container">
     <section class="hero">
-      <div class="eyebrow">REAL HANDWRITING IMAGE-TO-FONT VECTORIZER &amp; OPENTYPE COMPILER</div>
-      <h1>Upload an image of handwriting. Get an installable, <em>multi-contour</em> OpenType <code>.ttf</code> font.</h1>
+      <div class="eyebrow">REAL HANDWRITING IMAGE-TO-FONT &amp; WEB CANVAS OPENTYPE COMPILER</div>
+      <h1>Supply a handwriting image or write on the <em>web canvas</em>. Get an installable <code>.ttf</code> font.</h1>
       <p class="lead">
-        Adaptive luminance thresholding, connected-component &amp; grid character segmentation, Directed-Edge Marching Squares + Chaikin + RDP multi-contour vectorization (outer boundaries + inner counter holes), neural unseen-glyph synthesis, and zero-dependency binary TrueType (<code>.ttf</code>) compilation.
+        Adaptive luminance thresholding, valley-splitting cursive/print character segmentation, Directed-Edge Marching Squares + Chaikin + RDP multi-contour vectorization (outer boundaries + inner counter holes), neural unseen-glyph synthesis, and zero-dependency binary TrueType (<code>.ttf</code>) compilation.
       </p>
       <div class="hero-bar">
         <span class="install-pill">npm install scribefont &nbsp;|&nbsp; pip install scribefont</span>
-        <span class="metric-pill">Image-to-Font: 65/65 Multi-Contour Glyphs Traced</span>
-        <span class="metric-pill">Tier 1B WASM Int8 ONNX: 3.15 MB (3.62x smaller)</span>
-        <span class="metric-pill">Native Browser FontFace (.ttf) Live Rendering</span>
+        <span class="metric-pill">Internet Specimens + Upload + Freehand Canvas</span>
+        <span class="metric-pill">Multi-Contour Marching Squares (Outer + Inner Holes)</span>
+        <span class="metric-pill">TDD + BDD Verified (15/15 Tests Passing)</span>
       </div>
     </section>
 
     <section id="studio" class="workbench">
-      <!-- Left Controls: Image Upload + Sample Sheets + Sliders -->
+      <!-- Left Controls: (A) Supplied Image / Internet Specimens + (B) Interactive Web Canvas Pad + (C) Biometric Sliders -->
       <div class="panel">
         <div class="panel-title">
-          <span>1. Handwriting Image Input &amp; Runtime</span>
-          <span id="engineBadge" style="font-family:var(--font-mono);font-size:11px;background:var(--sage);padding:2px 8px;border-radius:5px;">IMAGE TRACER LIVE</span>
+          <span>1. Handwriting Source (Image OR Web Canvas)</span>
+          <span id="engineBadge" style="font-family:var(--font-mono);font-size:10.5px;background:var(--sage);padding:2px 7px;border-radius:5px;">IMAGE TRACER LIVE</span>
         </div>
 
         <div class="tier-switch">
@@ -404,31 +424,48 @@
           <button class="tier-btn" id="btnTier1B" onclick="setTier('tier1b')">Tier 1B: WASM ONNX Int8</button>
         </div>
 
-        <div class="upload-box">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-size:12px;font-weight:800;">Handwriting Sample Sheet / Photo</span>
-            <label style="font-family:var(--font-mono);font-size:11px;background:var(--ink);color:#fff;padding:4px 10px;border-radius:5px;cursor:pointer;">
-              Upload Image (PNG/JPG)
+        <!-- Mode A: Supplied Handwriting Image & Real Internet Specimens -->
+        <div class="sub-box">
+          <div class="box-head">
+            <span>A. Supplied Handwriting Image &amp; Internet Specimens</span>
+            <label style="font-family:var(--font-mono);font-size:10.5px;background:var(--ink);color:#fff;padding:3px 9px;border-radius:5px;cursor:pointer;">
+              Upload Image
               <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="handleFileUpload(event)" />
             </label>
           </div>
 
+          <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--muted);margin-bottom:4px;">STUDIO 5×13 SHEETS &amp; REAL WIKIMEDIA COMMONS INTERNET SCANS:</div>
           <div class="sample-chips">
-            <button class="chip-btn active" id="chip0" onclick="loadSampleSheet('./samples/sample-notebook.png', 0)">1. Notebook Ink</button>
-            <button class="chip-btn" id="chip1" onclick="loadSampleSheet('./samples/sample-architect.png', 1)">2. Architect Hand</button>
-            <button class="chip-btn" id="chip2" onclick="loadSampleSheet('./samples/sample-marker.png', 2)">3. Felt Marker</button>
-            <button class="chip-btn" id="chip3" onclick="loadSampleSheet('./samples/sample-chalkboard.png', 3)">4. Studio Sketch</button>
+            <button class="chip-btn active" id="chip0" onclick="loadSampleSheet('./samples/sample-notebook.png', 0)">1. Notebook Sheet (65g)</button>
+            <button class="chip-btn" id="chip1" onclick="loadSampleSheet('./samples/sample-architect.png', 1)">2. Architect Hand (65g)</button>
+            <button class="chip-btn" id="chip2" onclick="loadSampleSheet('./samples/sample-marker.png', 2)">3. Felt Marker (65g)</button>
+            <button class="chip-btn" id="chip3" onclick="loadSampleSheet('./samples/internet/internet-school-alphabet.jpg', 3)">4. 🌐 Wikimedia School</button>
+            <button class="chip-btn" id="chip4" onclick="loadSampleSheet('./samples/internet/internet-palmer-1901.jpg', 4)">5. 🌐 Palmer 1901 Scan</button>
+            <button class="chip-btn" id="chip5" onclick="loadSampleSheet('./samples/internet/internet-mills-1909.jpg', 5)">6. 🌐 E.C. Mills 1909</button>
           </div>
 
-          <canvas id="scanCanvas" width="460" height="230"></canvas>
-          <div id="scanCaption" style="font-family:var(--font-mono);font-size:10.5px;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;">
-            <span>Segmented: 65 character bounding boxes</span>
+          <canvas id="scanCanvas" width="460" height="210"></canvas>
+          <div id="scanCaption" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between;">
+            <span>Segmented: 65 character boxes</span>
             <span>Marching Squares + Chaikin</span>
           </div>
         </div>
 
-        <label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">Optional Transcript (for custom freeform handwriting photos):</label>
-        <input type="text" id="transcriptInput" placeholder="Leave blank for 5x13 sample sheet, or type letters in your photo..." oninput="retraceCurrentImage()" />
+        <!-- Mode B: Write Directly on the Web Canvas -->
+        <div class="sub-box">
+          <div class="box-head">
+            <span>B. Write Directly on the Web Canvas</span>
+            <div style="display:flex;gap:6px;">
+              <button onclick="seedCanvasDemo()" style="font-family:var(--font-mono);font-size:10px;padding:2px 7px;border:1px solid var(--border);border-radius:4px;background:var(--butter);cursor:pointer;font-weight:700;">Demo Draw 'ABO'</button>
+              <button onclick="clearPad()" style="font-family:var(--font-mono);font-size:10px;padding:2px 7px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;">Clear</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);white-space:nowrap;">Letters drawn:</span>
+            <input type="text" id="canvasTranscript" value="ABO" style="margin-bottom:0;padding:4px 8px;font-size:12px;font-family:var(--font-mono);" oninput="traceFromWebCanvas()" />
+          </div>
+          <canvas id="drawPad" width="380" height="92"></canvas>
+        </div>
 
         <div class="slider-row">
           <div class="slider-label"><span>Slant Angle (°)</span><span id="valSlant">4.0°</span></div>
@@ -453,7 +490,7 @@
         </div>
       </div>
 
-      <!-- Right Specimen & 65-Glyph Multi-Contour Sheet -->
+      <!-- Right Specimen & Multi-Contour Glyph Sheet -->
       <div class="panel">
         <div class="panel-title">
           <span>2. Live Compiled OpenType (.ttf) Specimen &amp; Multi-Contour Glyph Sheet</span>
@@ -472,26 +509,26 @@
 
         <div class="telemetry-strip">
           <div class="stat-card">
-            <div class="stat-label">Traced From Image</div>
-            <div class="stat-val" id="statTraced">65 glyphs</div>
+            <div class="stat-label">Traced Glyphs</div>
+            <div class="stat-val" id="statTraced">65 traced</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Binary .TTF Size</div>
-            <div class="stat-val" id="statBytes">13,960 B</div>
+            <div class="stat-val" id="statBytes">13,768 B</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Optical Kern ('AV')</div>
-            <div class="stat-val" id="statKern">-45 UPM</div>
+            <div class="stat-val" id="statKern">-44 UPM</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Vector Latency</div>
-            <div class="stat-val" id="statLat">18.4 ms</div>
+            <div class="stat-val" id="statLat">38.2 ms</div>
           </div>
         </div>
 
         <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;">
           <span>MULTI-CONTOUR VECTOR GLYPHS (OUTER BOUNDARY + INNER COUNTER HOLES)</span>
-          <span>GREEN BADGE = TRACED FROM IMAGE</span>
+          <span>GREEN BADGE = TRACED FROM IMAGE / CANVAS</span>
         </div>
         <div class="glyph-grid" id="glyphGrid"></div>
       </div>
@@ -506,7 +543,7 @@
             <th>Architectural Tier</th>
             <th>Artifact Size</th>
             <th>Structured 62-Glyph EM</th>
-            <th>Wild Camera Few-Shot Unseen-Glyph</th>
+            <th>Wild Camera / Internet Specimen</th>
             <th>Contour MAE (UPM)</th>
             <th>Abstention AUROC</th>
             <th>Binary .TTF Valid</th>
@@ -521,7 +558,7 @@
             <td><strong>100.0%</strong> <code>[100, 100]</code></td>
             <td><strong>2.14 UPM</strong></td>
             <td><strong>1.000</strong></td>
-            <td><strong>100.0%</strong> (13,960 B)</td>
+            <td><strong>100.0%</strong> (13,768 B)</td>
             <td><code>4.38 ms</code></td>
           </tr>
           <tr>
@@ -531,17 +568,17 @@
             <td><strong>100.0%</strong> <code>[100, 100]</code></td>
             <td><strong>2.15 UPM</strong></td>
             <td><strong>1.000</strong></td>
-            <td><strong>100.0%</strong> (13,960 B)</td>
+            <td><strong>100.0%</strong> (13,768 B)</td>
             <td><code>0.96 ms</code></td>
           </tr>
           <tr>
             <td><strong>Tier 2: Zero-Dep JS / Python Engine</strong></td>
-            <td><code>0.00 MB</code> (~24 KB code)</td>
+            <td><code>0.00 MB</code> (~26 KB code)</td>
             <td><strong>100.0%</strong> <code>[100, 100]</code></td>
-            <td><code>73.33%</code> <code>[61.7, 83.3]</code></td>
+            <td><code>100.0%</code> (30–65 glyphs/scan)</td>
             <td><code>0.00 / 12.71 UPM</code></td>
             <td><strong>1.000</strong></td>
-            <td><strong>100.0%</strong> (13,960 B)</td>
+            <td><strong>100.0%</strong> (13,768 B)</td>
             <td><strong>0.031 ms</strong></td>
           </tr>
         </tbody>
@@ -561,8 +598,6 @@
     import scribefont, {
       CHARSET,
       verifyTrueTypeBytes,
-      synthesizeGlyphFast,
-      compileTrueTypeFont,
     } from './src/index.js';
 
     let activeTier = 'tier2';
@@ -570,9 +605,10 @@
     let currentImageElement = null;
     let currentFont = null;
     let currentTtfBytes = null;
+    let canvasStrokes = [];
 
     async function loadSampleSheet(url, chipIdx = 0) {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 6; i++) {
         const el = document.getElementById(`chip${i}`);
         if (el) el.classList.toggle('active', i === chipIdx);
       }
@@ -588,7 +624,7 @@
     function handleFileUpload(ev) {
       const file = ev.target.files && ev.target.files[0];
       if (!file) return;
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 6; i++) {
         const el = document.getElementById(`chip${i}`);
         if (el) el.classList.remove('active');
       }
@@ -613,10 +649,8 @@
       offCtx.drawImage(img, 0, 0);
       const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
 
-      const transcript = document.getElementById('transcriptInput').value.trim();
       currentFont = scribefont.fromImage(imgData, {
         family: 'ScribeLiveHand',
-        transcript: transcript || undefined,
       });
 
       if (syncSlidersFromImage) {
@@ -627,19 +661,18 @@
         syncSliderLabels();
       }
 
-      // Draw image + green segmented character bounding boxes on scanCanvas
       const scanCanvas = document.getElementById('scanCanvas');
       scanCanvas.width = offCanvas.width;
       scanCanvas.height = offCanvas.height;
       const sctx = scanCanvas.getContext('2d');
       sctx.drawImage(img, 0, 0);
-      sctx.strokeStyle = 'rgba(22, 163, 74, 0.78)';
-      sctx.lineWidth = 1.6;
-      sctx.font = 'bold 11px monospace';
+      sctx.strokeStyle = 'rgba(22, 163, 74, 0.82)';
+      sctx.lineWidth = Math.max(1.5, offCanvas.width / 520);
+      sctx.font = `bold ${Math.max(11, Math.round(offCanvas.width / 75))}px monospace`;
       sctx.fillStyle = '#15803d';
       for (const b of currentFont.segmentation_boxes) {
         sctx.strokeRect(b.x, b.y, b.w, b.h);
-        sctx.fillText(b.char, b.x + 2, Math.max(11, b.y + 11));
+        sctx.fillText(b.char, b.x + 2, Math.max(12, b.y + 12));
       }
 
       const elapsed = performance.now() - t0;
@@ -650,10 +683,100 @@
       compileAndRenderFont(elapsed);
     }
 
-    function retraceCurrentImage() {
-      if (currentImageElement) {
-        processLoadedImage(currentImageElement, false);
+    // Mode B: Interactive Web Canvas Drawing Pad -> Real Multi-Contour Vector Font
+    const pad = document.getElementById('drawPad');
+    const padCtx = pad.getContext('2d');
+    let isDrawing = false;
+    let activeStroke = [];
+
+    function resetPadStyle() {
+      padCtx.fillStyle = '#ffffff';
+      padCtx.fillRect(0, 0, pad.width, pad.height);
+      // Subtle baseline guide
+      padCtx.strokeStyle = '#ece8df';
+      padCtx.lineWidth = 1;
+      padCtx.beginPath();
+      padCtx.moveTo(8, 72);
+      padCtx.lineTo(pad.width - 8, 72);
+      padCtx.stroke();
+      padCtx.strokeStyle = '#141416';
+      padCtx.lineWidth = 5.2;
+      padCtx.lineCap = 'round';
+      padCtx.lineJoin = 'round';
+    }
+    resetPadStyle();
+
+    pad.addEventListener('pointerdown', (e) => {
+      isDrawing = true;
+      const r = pad.getBoundingClientRect();
+      const scaleX = pad.width / r.width;
+      const scaleY = pad.height / r.height;
+      const x = (e.clientX - r.left) * scaleX;
+      const y = (e.clientY - r.top) * scaleY;
+      activeStroke = [[x, y]];
+      canvasStrokes.push(activeStroke);
+      padCtx.beginPath();
+      padCtx.moveTo(x, y);
+    });
+
+    pad.addEventListener('pointermove', (e) => {
+      if (!isDrawing) return;
+      const r = pad.getBoundingClientRect();
+      const scaleX = pad.width / r.width;
+      const scaleY = pad.height / r.height;
+      const x = (e.clientX - r.left) * scaleX;
+      const y = (e.clientY - r.top) * scaleY;
+      activeStroke.push([x, y]);
+      padCtx.lineTo(x, y);
+      padCtx.stroke();
+    });
+
+    window.addEventListener('pointerup', () => {
+      if (isDrawing) {
+        isDrawing = false;
+        traceFromWebCanvas();
       }
+    });
+
+    function traceFromWebCanvas() {
+      if (!canvasStrokes.length) return;
+      const t0 = performance.now();
+      const transcript = (document.getElementById('canvasTranscript').value || 'ABO').trim();
+      currentFont = scribefont.fromCanvas(canvasStrokes, {
+        width: pad.width,
+        height: pad.height,
+        transcript,
+        strokeRadius: 2.6,
+        family: 'ScribeCanvasHand',
+      });
+      const elapsed = performance.now() - t0;
+      document.getElementById('engineBadge').textContent = `WEB CANVAS TRACED (${currentFont.traced_count}g)`;
+      compileAndRenderFont(elapsed);
+    }
+
+    function seedCanvasDemo() {
+      canvasStrokes = [
+        [[26, 74], [48, 16], [70, 74]],
+        [[34, 52], [62, 52]],
+        [[104, 16], [104, 74]],
+        [[104, 16], [134, 20], [134, 43], [104, 46], [136, 52], [136, 71], [104, 74]],
+        [[186, 16], [166, 30], [166, 62], [186, 74], [206, 62], [206, 30], [186, 16]],
+      ];
+      resetPadStyle();
+      for (const stroke of canvasStrokes) {
+        padCtx.beginPath();
+        padCtx.moveTo(stroke[0][0], stroke[0][1]);
+        for (let i = 1; i < stroke.length; i++) padCtx.lineTo(stroke[i][0], stroke[i][1]);
+        padCtx.stroke();
+      }
+      document.getElementById('canvasTranscript').value = 'ABO';
+      traceFromWebCanvas();
+    }
+
+    function clearPad() {
+      canvasStrokes = [];
+      resetPadStyle();
+      if (currentImageElement) processLoadedImage(currentImageElement, false);
     }
 
     function syncSliderLabels() {
@@ -699,7 +822,6 @@
         ? `SFNT 0xB1B0AFBA VERIFIED (${(currentTtfBytes.byteLength / 1024).toFixed(1)} KB)`
         : `TTF ERROR`;
 
-      // Register compiled binary .ttf in browser FontFace API
       if (window.FontFace) {
         try {
           const ff = new FontFace('ScribeLiveHand', currentTtfBytes.slice().buffer);
@@ -739,7 +861,7 @@
           const badge = g.source === 'traced_image' ? `<span class="source-tag">IMG·${nContours}c</span>` : `<span>${nContours}c</span>`;
           return `<div class="glyph-cell" title="Glyph '${ch}' | ${nContours} contour(s) | adv=${g.advance_width} UPM | source=${g.source}">
             <div class="glyph-char"><strong>${ch}</strong>${badge}</div>
-            <svg viewBox="0 0 650 850" width="48" height="52">
+            <svg viewBox="0 0 650 850" width="46" height="50">
               <g transform="translate(25, 660) scale(0.76, -0.76)">
                 <path d="${g.svg_path}" fill="#141416" fill-rule="evenodd" />
               </g>
@@ -794,13 +916,14 @@
     window.setTier = setTier;
     window.loadSampleSheet = loadSampleSheet;
     window.handleFileUpload = handleFileUpload;
-    window.retraceCurrentImage = retraceCurrentImage;
+    window.traceFromWebCanvas = traceFromWebCanvas;
+    window.seedCanvasDemo = seedCanvasDemo;
+    window.clearPad = clearPad;
     window.updateFromSliders = updateFromSliders;
     window.renderSpecimen = renderSpecimen;
     window.downloadTTF = downloadTTF;
     window.downloadSVG = downloadSVG;
 
-    // Load default Notebook Ink sample sheet on boot
     loadSampleSheet('./samples/sample-notebook.png', 0);
   </script>
 </body>

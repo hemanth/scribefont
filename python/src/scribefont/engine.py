@@ -328,6 +328,98 @@ def synthesize_glyph_fast(
     }
 
 
+def rasterize_strokes_to_image(
+    strokes: list[list[list[float]]],
+    width: int = 380,
+    height: int = 110,
+    stroke_radius: float = 2.6,
+) -> dict[str, Any]:
+    """Rasterize 2D freehand canvas stroke polylines into a clean RGBA bitmap buffer for Marching Squares tracing."""
+    W = max(32, int(width))
+    H = max(32, int(height))
+    data = bytearray([252] * (W * H * 4))
+    for i in range(W * H):
+        data[i * 4 + 3] = 255
+    r_ceil = int(math.ceil(stroke_radius))
+    r2 = stroke_radius * stroke_radius
+
+    for stroke in strokes:
+        if not stroke:
+            continue
+        for idx in range(len(stroke)):
+            x0, y0 = float(stroke[idx][0]), float(stroke[idx][1])
+            x1, y1 = (float(stroke[idx + 1][0]), float(stroke[idx + 1][1])) if idx + 1 < len(stroke) else (x0, y0)
+            dist = max(1.0, math.hypot(x1 - x0, y1 - y0))
+            steps = int(math.ceil(dist * 2.0))
+            for s in range(steps + 1):
+                t = s / float(max(1, steps))
+                px = x0 + (x1 - x0) * t
+                py = y0 + (y1 - y0) * t
+                ix, iy = int(round(px)), int(round(py))
+                for dy in range(-r_ceil, r_ceil + 1):
+                    ry = iy + dy
+                    if ry < 0 or ry >= H:
+                        continue
+                    for dx in range(-r_ceil, r_ceil + 1):
+                        rx = ix + dx
+                        if rx < 0 or rx >= W:
+                            continue
+                        if (rx - px) ** 2 + (ry - py) ** 2 <= r2:
+                            off = (ry * W + rx) * 4
+                            data[off] = 20
+                            data[off + 1] = 22
+                            data[off + 2] = 28
+    return {"width": W, "height": H, "data": data}
+
+
+def _split_col_spans_adaptive(col_sums: list[int], band_h: int, max_expected_chars: int = 67) -> list[tuple[int, int]]:
+    """Split a text row's column ink profile into individual character column spans, subdividing wide cursive runs at local minima."""
+    W = len(col_sums)
+    raw_spans: list[tuple[int, int]] = []
+    in_col = False
+    c_start = 0
+    for c, cs in enumerate(col_sums):
+        if cs > 0 and not in_col:
+            in_col = True
+            c_start = c
+        elif cs == 0 and in_col:
+            in_col = False
+            if c - c_start >= 3:
+                raw_spans.append((c_start, c))
+    if in_col and W - c_start >= 3:
+        raw_spans.append((c_start, W))
+
+    if len(raw_spans) >= max_expected_chars:
+        return raw_spans
+
+    max_char_w = max(36, int(round(band_h * 1.15)))
+    target_char_w = max(22, int(round(band_h * 0.72)))
+    final_spans: list[tuple[int, int]] = []
+
+    for s0, s1 in raw_spans:
+        span_w = s1 - s0
+        if span_w <= max_char_w:
+            final_spans.append((s0, s1))
+        else:
+            n_splits = max(2, int(round(span_w / float(target_char_w))))
+            step = span_w / float(n_splits)
+            cur = s0
+            for k in range(1, n_splits):
+                ideal = int(round(s0 + k * step))
+                win_l = max(cur + 6, ideal - max(4, int(step * 0.28)))
+                win_r = min(s1 - 6, ideal + max(4, int(step * 0.28)))
+                if win_l < win_r:
+                    cut = min(range(win_l, win_r + 1), key=lambda x: col_sums[x])
+                else:
+                    cut = ideal
+                if cut - cur >= 4:
+                    final_spans.append((cur, cut))
+                cur = cut
+            if s1 - cur >= 4:
+                final_spans.append((cur, s1))
+    return final_spans
+
+
 def segment_and_trace_image(
     image_source: Any,
     transcript: str | None = None,
@@ -388,21 +480,43 @@ def segment_and_trace_image(
 
     # Check if image matches standard 5x13 sample sheet aspect ratio (~2.0) and has 5 horizontal text bands
     row_sums = [sum(mask[r]) for r in range(H)]
+    row_nz = [r for r in row_sums if r > 0]
+    row_gate = max(2, int(sorted(row_nz)[int(len(row_nz) * 0.12)] * 0.35)) if row_nz else 3
     bands: list[tuple[int, int]] = []
     in_b = False
     b_start = 0
     for r, s in enumerate(row_sums):
-        if s >= 3 and not in_b:
+        if s >= row_gate and not in_b:
             in_b = True
             b_start = r
-        elif s < 3 and in_b:
+        elif s < row_gate and in_b:
             in_b = False
-            if r - b_start >= 10:
+            if r - b_start >= 8:
                 bands.append((b_start, r))
-    if in_b and H - b_start >= 10:
+    if in_b and H - b_start >= 8:
         bands.append((b_start, H))
 
-    if not transcript and len(bands) == 5 and 1.6 <= (W / max(1.0, float(H))) <= 2.5:
+    # Subdivide any extra-tall band (> 2.2x median band height) only in multi-line sheets (H >= 180)
+    refined_bands: list[tuple[int, int]] = []
+    for b0, b1 in bands:
+        bh = b1 - b0
+        if H >= 180 and bh > H * 0.28 and len(bands) >= 2:
+            n_sub = max(2, int(round(bh / max(24.0, H * 0.14))))
+            step_r = bh / float(n_sub)
+            cur_r = b0
+            for k in range(1, n_sub):
+                ideal_r = int(round(b0 + k * step_r))
+                wl = max(cur_r + 8, ideal_r - int(step_r * 0.3))
+                wr = min(b1 - 8, ideal_r + int(step_r * 0.3))
+                cut_r = min(range(wl, wr + 1), key=lambda r_i: row_sums[r_i]) if wl < wr else ideal_r
+                refined_bands.append((cur_r, cut_r))
+                cur_r = cut_r
+            refined_bands.append((cur_r, b1))
+        else:
+            refined_bands.append((b0, b1))
+    bands = refined_bands
+
+    if not transcript and len(bands) == 5 and 1.85 <= (W / max(1.0, float(H))) <= 2.15:
         # 5x13 Sample Sheet grid mode
         row_step = H / 5.22
         col_step = W / 14.15
@@ -436,41 +550,39 @@ def segment_and_trace_image(
                     traced_glyphs[ch] = contours
                     boxes.append({"char": ch, "x": x0 + xmin_px, "y": y0, "w": max(8, xmax_px - xmin_px), "h": cell_h})
     else:
-        # Freeform connected-column segmentation across detected text rows
-        chars_seq = [c for c in (transcript or CHARSET) if c != " "]
+        # Freeform connected-column + valley-splitting segmentation across detected text rows
+        chars_seq = [c for c in (transcript or (CHARSET + "!?.,-")) if c != " "]
         char_cursor = 0
         for b_y0, b_y1 in bands:
-            pad_y0 = max(0, b_y0 - 3)
-            pad_y1 = min(H, b_y1 + 4)
+            pad_y0 = max(0, b_y0 - 2)
+            pad_y1 = min(H, b_y1 + 3)
             band_h = pad_y1 - pad_y0
-            baseline_local = band_h * 0.78
-            scale_upm = 680.0 / max(14.0, band_h * 0.68)
+            baseline_local = band_h * 0.76
+            scale_upm = 660.0 / max(14.0, band_h * 0.65)
 
             col_sums = [sum(mask[r][c] for r in range(pad_y0, pad_y1)) for c in range(W)]
-            in_col = False
-            c_start = 0
-            for c, cs in enumerate(col_sums):
-                if cs > 0 and not in_col:
-                    in_col = True
-                    c_start = c
-                elif cs == 0 and in_col:
-                    in_col = False
-                    if c - c_start >= 3 and char_cursor < len(chars_seq):
-                        ch = chars_seq[char_cursor]
-                        char_cursor += 1
-                        x0 = max(0, c_start - 2)
-                        x1 = min(W, c + 2)
-                        cell = [mask[r][x0:x1] for r in range(pad_y0, pad_y1)]
-                        contours = trace_bitmap_to_contours(
-                            cell,
-                            baseline_row=baseline_local,
-                            x_offset=2.0,
-                            scale_upm=scale_upm,
-                            eps=5.5,
-                        )
-                        if contours:
-                            traced_glyphs[ch] = contours
-                            boxes.append({"char": ch, "x": x0, "y": pad_y0, "w": x1 - x0, "h": band_h})
+            spans = _split_col_spans_adaptive(col_sums, band_h, max_expected_chars=len(chars_seq) - char_cursor)
+            for c_start, c_end in spans:
+                if char_cursor >= len(chars_seq):
+                    break
+                x0 = max(0, c_start - 1)
+                x1 = min(W, c_end + 1)
+                cell = [mask[r][x0:x1] for r in range(pad_y0, pad_y1)]
+                ink_pts = sum(sum(row) for row in cell)
+                if ink_pts < 5:
+                    continue
+                ch = chars_seq[char_cursor]
+                char_cursor += 1
+                contours = trace_bitmap_to_contours(
+                    cell,
+                    baseline_row=baseline_local,
+                    x_offset=1.5,
+                    scale_upm=scale_upm,
+                    eps=5.5,
+                )
+                if contours:
+                    traced_glyphs[ch] = contours
+                    boxes.append({"char": ch, "x": x0, "y": pad_y0, "w": x1 - x0, "h": band_h})
 
     # Measure writer biometrics directly from traced glyphs
     widths = []
@@ -833,6 +945,22 @@ class ScribeFont:
         """Create a complete OpenType handwriting font directly from a handwriting image (PNG/JPG path, PIL Image, or RGBA buffer)."""
         return cls(image_source, transcript=transcript, **kwargs)
 
+    @classmethod
+    def from_canvas(
+        cls,
+        strokes_or_image: Any,
+        width: int = 380,
+        height: int = 110,
+        transcript: str | None = None,
+        stroke_radius: float = 2.6,
+        **kwargs: Any,
+    ) -> "ScribeFont":
+        """Create a complete OpenType handwriting font directly from web canvas strokes or canvas ImageData."""
+        if isinstance(strokes_or_image, list):
+            img_buf = rasterize_strokes_to_image(strokes_or_image, width=width, height=height, stroke_radius=stroke_radius)
+            return cls(img_buf, transcript=transcript, **kwargs)
+        return cls(strokes_or_image, transcript=transcript, **kwargs)
+
     def glyph(self, ch: str) -> dict[str, Any]:
         if ch not in self.glyphs:
             self.glyphs[ch] = synthesize_glyph_fast(ch, self.style_vector, upm=self.upm)
@@ -899,3 +1027,4 @@ def scribefont(sample: Any = None, options: dict[str, Any] | None = None, **kwar
 
 
 scribefont.from_image = ScribeFont.from_image  # type: ignore[attr-defined]
+scribefont.from_canvas = ScribeFont.from_canvas  # type: ignore[attr-defined]

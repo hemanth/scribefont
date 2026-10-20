@@ -362,6 +362,105 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
   };
 }
 
+export function rasterizeStrokesToImage(strokes, { width = 380, height = 110, strokeRadius = 2.6 } = {}) {
+  const W = Math.max(32, Math.round(width));
+  const H = Math.max(32, Math.round(height));
+  const data = new Uint8ClampedArray(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    data[i * 4] = 252;
+    data[i * 4 + 1] = 252;
+    data[i * 4 + 2] = 252;
+    data[i * 4 + 3] = 255;
+  }
+  const rCeil = Math.ceil(strokeRadius);
+  const r2 = strokeRadius * strokeRadius;
+
+  for (const stroke of strokes || []) {
+    if (!Array.isArray(stroke) || stroke.length === 0) continue;
+    for (let idx = 0; idx < stroke.length; idx++) {
+      const [x0, y0] = stroke[idx];
+      const [x1, y1] = idx + 1 < stroke.length ? stroke[idx + 1] : [x0, y0];
+      const dist = Math.max(1.0, Math.hypot(x1 - x0, y1 - y0));
+      const steps = Math.ceil(dist * 2.0);
+      for (let s = 0; s <= steps; s++) {
+        const t = s / Math.max(1, steps);
+        const px = x0 + (x1 - x0) * t;
+        const py = y0 + (y1 - y0) * t;
+        const ix = Math.round(px);
+        const iy = Math.round(py);
+        for (let dy = -rCeil; dy <= rCeil; dy++) {
+          const ry = iy + dy;
+          if (ry < 0 || ry >= H) continue;
+          for (let dx = -rCeil; dx <= rCeil; dx++) {
+            const rx = ix + dx;
+            if (rx < 0 || rx >= W) continue;
+            if ((rx - px) * (rx - px) + (ry - py) * (ry - py) <= r2) {
+              const off = (ry * W + rx) * 4;
+              data[off] = 20;
+              data[off + 1] = 22;
+              data[off + 2] = 28;
+            }
+          }
+        }
+      }
+    }
+  }
+  return { width: W, height: H, data };
+}
+
+function splitColSpansAdaptive(colSums, bandH, maxExpectedChars = 67) {
+  const W = colSums.length;
+  const rawSpans = [];
+  let inCol = false;
+  let cStart = 0;
+  for (let c = 0; c < W; c++) {
+    if (colSums[c] > 0 && !inCol) {
+      inCol = true;
+      cStart = c;
+    } else if (colSums[c] === 0 && inCol) {
+      inCol = false;
+      if (c - cStart >= 3) rawSpans.push([cStart, c]);
+    }
+  }
+  if (inCol && W - cStart >= 3) rawSpans.push([cStart, W]);
+
+  if (rawSpans.length >= maxExpectedChars) return rawSpans;
+
+  const maxCharW = Math.max(36, Math.round(bandH * 1.15));
+  const targetCharW = Math.max(22, Math.round(bandH * 0.72));
+  const finalSpans = [];
+
+  for (const [s0, s1] of rawSpans) {
+    const spanW = s1 - s0;
+    if (spanW <= maxCharW) {
+      finalSpans.push([s0, s1]);
+    } else {
+      const nSplits = Math.max(2, Math.round(spanW / targetCharW));
+      const step = spanW / nSplits;
+      let cur = s0;
+      for (let k = 1; k < nSplits; k++) {
+        const ideal = Math.round(s0 + k * step);
+        const winL = Math.max(cur + 6, ideal - Math.max(4, Math.floor(step * 0.28)));
+        const winR = Math.min(s1 - 6, ideal + Math.max(4, Math.floor(step * 0.28)));
+        let cut = ideal;
+        if (winL < winR) {
+          let minVal = Infinity;
+          for (let x = winL; x <= winR; x++) {
+            if (colSums[x] < minVal) {
+              minVal = colSums[x];
+              cut = x;
+            }
+          }
+        }
+        if (cut - cur >= 4) finalSpans.push([cur, cut]);
+        cur = cut;
+      }
+      if (s1 - cur >= 4) finalSpans.push([cur, s1]);
+    }
+  }
+  return finalSpans;
+}
+
 export function segmentAndTraceImage(imageData, options = {}) {
   const W = Number(imageData.width);
   const H = Number(imageData.height);
@@ -397,25 +496,58 @@ export function segmentAndTraceImage(imageData, options = {}) {
     return s;
   });
 
-  const bands = [];
+  const rowNz = rowSums.filter((r) => r > 0).sort((a, b) => a - b);
+  const rowGate = rowNz.length ? Math.max(2, Math.floor(rowNz[Math.floor(rowNz.length * 0.12)] * 0.35)) : 3;
+  let bands = [];
   let inB = false;
   let bStart = 0;
   for (let r = 0; r < H; r++) {
-    if (rowSums[r] >= 3 && !inB) {
+    if (rowSums[r] >= rowGate && !inB) {
       inB = true;
       bStart = r;
-    } else if (rowSums[r] < 3 && inB) {
+    } else if (rowSums[r] < rowGate && inB) {
       inB = false;
-      if (r - bStart >= 10) bands.push([bStart, r]);
+      if (r - bStart >= 8) bands.push([bStart, r]);
     }
   }
-  if (inB && H - bStart >= 10) bands.push([bStart, H]);
+  if (inB && H - bStart >= 8) bands.push([bStart, H]);
+
+  const refinedBands = [];
+  for (const [b0, b1] of bands) {
+    const bh = b1 - b0;
+    if (H >= 180 && bh > H * 0.28 && bands.length >= 2) {
+      const nSub = Math.max(2, Math.round(bh / Math.max(24, H * 0.14)));
+      const stepR = bh / nSub;
+      let curR = b0;
+      for (let k = 1; k < nSub; k++) {
+        const idealR = Math.round(b0 + k * stepR);
+        const wl = Math.max(curR + 8, idealR - Math.floor(stepR * 0.3));
+        const wr = Math.min(b1 - 8, idealR + Math.floor(stepR * 0.3));
+        let cutR = idealR;
+        if (wl < wr) {
+          let minV = Infinity;
+          for (let ri = wl; ri <= wr; ri++) {
+            if (rowSums[ri] < minV) {
+              minV = rowSums[ri];
+              cutR = ri;
+            }
+          }
+        }
+        refinedBands.push([curR, cutR]);
+        curR = cutR;
+      }
+      refinedBands.push([curR, b1]);
+    } else {
+      refinedBands.push([b0, b1]);
+    }
+  }
+  bands = refinedBands;
 
   const tracedGlyphs = {};
   const boxes = [];
   const transcript = options.transcript || '';
 
-  if (!transcript && bands.length === 5 && W / Math.max(1, H) >= 1.6 && W / Math.max(1, H) <= 2.5) {
+  if (!transcript && bands.length === 5 && W / Math.max(1, H) >= 1.85 && W / Math.max(1, H) <= 2.15) {
     const rowStep = H / 5.22;
     const colStep = W / 14.15;
     SAMPLE_SHEET_LINES.forEach((line, rIdx) => {
@@ -457,14 +589,14 @@ export function segmentAndTraceImage(imageData, options = {}) {
       });
     });
   } else {
-    const charsSeq = [...(transcript || CHARSET)].filter((c) => c !== ' ');
+    const charsSeq = [...(transcript || (CHARSET + '!?.,-'))].filter((c) => c !== ' ');
     let charCursor = 0;
     for (const [bY0, bY1] of bands) {
-      const padY0 = Math.max(0, bY0 - 3);
-      const padY1 = Math.min(H, bY1 + 4);
+      const padY0 = Math.max(0, bY0 - 2);
+      const padY1 = Math.min(H, bY1 + 3);
       const bandH = padY1 - padY0;
-      const baselineLocal = bandH * 0.78;
-      const scaleUpm = 680.0 / Math.max(14.0, bandH * 0.68);
+      const baselineLocal = bandH * 0.76;
+      const scaleUpm = 660.0 / Math.max(14.0, bandH * 0.65);
 
       const colSums = new Int32Array(W);
       for (let c = 0; c < W; c++) {
@@ -472,26 +604,24 @@ export function segmentAndTraceImage(imageData, options = {}) {
         for (let r = padY0; r < padY1; r++) s += mask[r][c];
         colSums[c] = s;
       }
-      let inCol = false;
-      let cStart = 0;
-      for (let c = 0; c < W; c++) {
-        if (colSums[c] > 0 && !inCol) {
-          inCol = true;
-          cStart = c;
-        } else if (colSums[c] === 0 && inCol) {
-          inCol = false;
-          if (c - cStart >= 3 && charCursor < charsSeq.length) {
-            const ch = charsSeq[charCursor++];
-            const x0 = Math.max(0, cStart - 2);
-            const x1 = Math.min(W, c + 2);
-            const cell = [];
-            for (let r = padY0; r < padY1; r++) cell.push(mask[r].slice(x0, x1));
-            const contours = traceBitmapToContours(cell, baselineLocal, 2.0, scaleUpm, 5.5);
-            if (contours.length > 0) {
-              tracedGlyphs[ch] = contours;
-              boxes.push({ char: ch, x: x0, y: padY0, w: x1 - x0, h: bandH });
-            }
-          }
+      const spans = splitColSpansAdaptive(colSums, bandH, charsSeq.length - charCursor);
+      for (const [cStart, cEnd] of spans) {
+        if (charCursor >= charsSeq.length) break;
+        const x0 = Math.max(0, cStart - 1);
+        const x1 = Math.min(W, cEnd + 1);
+        const cell = [];
+        let inkPts = 0;
+        for (let r = padY0; r < padY1; r++) {
+          const rowSlice = mask[r].slice(x0, x1);
+          for (let k = 0; k < rowSlice.length; k++) inkPts += rowSlice[k];
+          cell.push(rowSlice);
+        }
+        if (inkPts < 5) continue;
+        const ch = charsSeq[charCursor++];
+        const contours = traceBitmapToContours(cell, baselineLocal, 1.5, scaleUpm, 5.5);
+        if (contours.length > 0) {
+          tracedGlyphs[ch] = contours;
+          boxes.push({ char: ch, x: x0, y: padY0, w: x1 - x0, h: bandH });
         }
       }
     }
@@ -908,6 +1038,19 @@ export class ScribeFont {
     return new ScribeFont(imageData, options);
   }
 
+  static fromCanvas(strokesOrCanvas, options = {}) {
+    if (Array.isArray(strokesOrCanvas)) {
+      const imgData = rasterizeStrokesToImage(strokesOrCanvas, options);
+      return new ScribeFont(imgData, options);
+    }
+    if (strokesOrCanvas && typeof strokesOrCanvas.getContext === 'function') {
+      const ctx = strokesOrCanvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, strokesOrCanvas.width, strokesOrCanvas.height);
+      return new ScribeFont(imgData, options);
+    }
+    return new ScribeFont(strokesOrCanvas, options);
+  }
+
   glyph(ch) {
     if (!this.glyphs[ch]) {
       this.glyphs[ch] = synthesizeGlyphFast(ch, this.styleVector, null, this.upm);
@@ -978,5 +1121,6 @@ export function scribefont(sample = null, options = {}) {
   return new ScribeFont(sample, options);
 }
 scribefont.fromImage = ScribeFont.fromImage;
+scribefont.fromCanvas = ScribeFont.fromCanvas;
 
 export default scribefont;

@@ -73,6 +73,22 @@ test('scribefont.fromImage traces synthetic handwriting image bitmap into valid 
   assert.equal(verifyTrueTypeBytes(ttf).valid, true);
 });
 
+test('scribefont.fromCanvas rasterizes and traces freehand web canvas strokes into multi-contour .ttf', () => {
+  assert.equal(typeof scribefont.fromCanvas, 'function');
+  const strokes = [
+    [[24, 78], [44, 18], [64, 78]],
+    [[31, 54], [57, 54]],
+    [[95, 18], [95, 78]],
+    [[95, 18], [122, 22], [122, 45], [95, 48], [125, 54], [125, 75], [95, 78]],
+  ];
+  const font = scribefont.fromCanvas(strokes, { width: 220, height: 96, transcript: 'AB', family: 'CanvasHand' });
+  assert.ok(font.traced_count >= 2);
+  assert.equal(font.glyph('A').source, 'traced_image');
+  assert.equal(font.glyph('B').source, 'traced_image');
+  assert.ok(font.glyph('A').contours.length >= 2);
+  assert.equal(verifyTrueTypeBytes(font.toTTF()).valid, true);
+});
+
 test('synthesizeGlyphFast abstains with calibrated p_missing on blank/smudge cells', () => {
   const blankPatch = Array(256).fill(0.02);
   const res = synthesizeGlyphFast('Q', undefined, blankPatch);
