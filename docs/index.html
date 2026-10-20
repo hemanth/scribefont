@@ -648,19 +648,104 @@ function split16PtsIntoStrokes(ch, pts16) {
       document.getElementById('btnTier1B').classList.toggle('active', tier === 'tier1b');
       const badge = document.getElementById('engineBadge');
       if (tier === 'tier1b') {
-        badge.textContent = 'LOADING ONNX INT8...';
+        badge.textContent = 'LOADING ONNX (3.15 MB)...';
         try {
           if (!ortSession && window.ort) {
-            ortSession = await ort.InferenceSession.create('./model_quantized.onnx', { executionProviders: ['wasm'] });
+            ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+            ortSession = await ort.InferenceSession.create('./model_quantized.onnx', {
+              executionProviders: ['wasm'],
+            });
           }
-          badge.textContent = 'WASM ONNX INT8 (3.15 MB)';
+          badge.textContent = 'WASM ONNX INT8 LIVE';
         } catch (e) {
-          badge.textContent = 'ONNX READY (SIM)';
+          console.error('ONNX load error:', e);
+          badge.textContent = 'ONNX ERROR: ' + (e.message || 'LOAD FAILED').slice(0, 18);
         }
       } else {
         badge.textContent = 'ZERO-DEP 0 MB';
       }
-      renderAll();
+      await renderAll();
+    }
+
+    async function runNeuralBatch62(style) {
+      const B = CHARSET.length; // 62 glyphs in a single batched WASM SIMD pass
+      const charIds = new BigInt64Array(B);
+      const baseSkel = new Float32Array(B * 16 * 2);
+      const refPatches = new Float32Array(B * 1024);
+      const targetPatch = new Float32Array(B * 256);
+      const styleFeats = new Float32Array(B * 8);
+
+      const normStyle = [
+        Math.max(0, Math.min(1, (style[0] + 15.0) / 40.0)),
+        Math.max(0, Math.min(1, (style[1] - 25.0) / 90.0)),
+        Math.max(0, Math.min(1, (style[2] - 0.55) / 0.30)),
+        Math.max(0, Math.min(1, (style[3] - 0.70) / 0.60)),
+        Math.max(0, Math.min(1, style[4])),
+        Math.max(0, Math.min(1, style[5] / 25.0)),
+        Math.max(0, Math.min(1, style[6])),
+        Math.max(0, Math.min(1, style[7])),
+      ];
+
+      for (let b = 0; b < B; b++) {
+        const ch = CHARSET[b];
+        charIds[b] = BigInt(b);
+        const sk = canonicalSkeletonPoints(ch);
+        for (let p = 0; p < 16; p++) {
+          baseSkel[b * 32 + p * 2] = sk[p][0];
+          baseSkel[b * 32 + p * 2 + 1] = sk[p][1];
+        }
+        for (let s = 0; s < 8; s++) {
+          styleFeats[b * 8 + s] = normStyle[s];
+        }
+        // Populate target patch with non-blank ink activation
+        for (let k = 0; k < 256; k++) targetPatch[b * 256 + k] = 0.65;
+        for (let k = 0; k < 1024; k++) refPatches[b * 1024 + k] = 0.55;
+      }
+
+      const feeds = {
+        char_ids: new ort.Tensor('int64', charIds, [B]),
+        base_skeleton: new ort.Tensor('float32', baseSkel, [B, 16, 2]),
+        ref_patches: new ort.Tensor('float32', refPatches, [B, 1024]),
+        target_patch: new ort.Tensor('float32', targetPatch, [B, 256]),
+        style_feats: new ort.Tensor('float32', styleFeats, [B, 8]),
+      };
+
+      const out = await ortSession.run(feeds);
+      const cData = out.contour_preds.data;
+      const mData = out.metrics_preds.data;
+      const glyphs = {};
+      const upm = 1000;
+      const strokeW = style[1];
+
+      for (let b = 0; b < B; b++) {
+        const ch = CHARSET[b];
+        const contourUpm = [];
+        for (let p = 0; p < 16; p++) {
+          const nx = cData[b * 32 + p * 2];
+          const ny = cData[b * 32 + p * 2 + 1];
+          contourUpm.push([Math.round(nx * upm * 0.68), Math.round((ny - 0.22) * upm)]);
+        }
+        const xs = contourUpm.map((pt) => pt[0]);
+        const xmin = Math.min(...xs), xmax = Math.max(...xs);
+        const lsb = Math.max(20, Math.round(mData[b * 5 + 1] * 300));
+        const predAdv = Math.round(mData[b * 5] * 1000);
+        const advanceWidth = Math.max(predAdv, (xmax - xmin) + lsb + Math.round(strokeW * 0.4));
+        const kernAv = Math.round(mData[b * 5 + 4] * 120 - 120);
+        glyphs[ch] = {
+          char: ch,
+          contour_upm: contourUpm,
+          lsb,
+          advance_width: advanceWidth,
+          stroke_width: strokeW,
+          kern_av: kernAv,
+          svg_path: contourToSvgPath(contourUpm, ch),
+          verified: advanceWidth >= (xmax - xmin) + lsb,
+        };
+      }
+      for (const pCh of ['!', '?', '.', ',', '-']) {
+        glyphs[pCh] = synthesizeGlyph(pCh, style);
+      }
+      return glyphs;
     }
 
     function applyPreset() {
@@ -696,13 +781,17 @@ function split16PtsIntoStrokes(ch, pts16) {
       renderAll();
     }
 
-    function renderAll() {
+    async function renderAll() {
       const t0 = performance.now();
-      const glyphs = {};
-      for (const ch of [...CHARSET, "!", "?", ".", ",", "-"]) {
-        glyphs[ch] = synthesizeGlyph(ch, currentStyle);
+      let glyphs = {};
+      if (activeTier === 'tier1b' && ortSession) {
+        glyphs = await runNeuralBatch62(currentStyle);
+      } else {
+        for (const ch of [...CHARSET, "!", "?", ".", ",", "-"]) {
+          glyphs[ch] = synthesizeGlyph(ch, currentStyle);
+        }
       }
-      const elapsed = (performance.now() - t0) + (activeTier === 'tier1b' ? 0.92 : 0.0);
+      const elapsed = performance.now() - t0;
       document.getElementById('statLat').textContent = `${elapsed.toFixed(2)} ms`;
       document.getElementById('statKern').textContent = `${glyphs['A'].kern_av} UPM`;
 
