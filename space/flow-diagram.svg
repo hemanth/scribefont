@@ -1,89 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 360" width="1040" height="360" fill="none">
-  <style>
-    .bg { fill: #ffffff; stroke: #000000; stroke-width: 1.5px; }
-    .cluster { fill: #ffffff; stroke: #000000; stroke-width: 1.2px; rx: 12px; }
-    .cluster-dashed { fill: #ffffff; stroke: #000000; stroke-width: 1.2px; stroke-dasharray: 5,5; rx: 12px; }
-    .node { fill: #ffffff; stroke: #000000; stroke-width: 1.2px; rx: 8px; }
-    .focal { fill: #000000; stroke: #000000; stroke-width: 1.5px; rx: 10px; }
-    .title { font-family: 'Geist', 'Inter', -apple-system, sans-serif; font-size: 14px; font-weight: 700; fill: #000000; }
-    .focal-title { font-family: 'Geist', 'Inter', -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #ffffff; }
-    .sub { font-family: 'Geist Mono', 'SF Mono', monospace; font-size: 11px; fill: #333333; }
-    .focal-sub { font-family: 'Geist Mono', 'SF Mono', monospace; font-size: 11px; fill: #e4e4e7; }
-    .eyebrow { font-family: 'Geist Mono', 'SF Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; fill: #000000; }
-    .edge { stroke: #000000; stroke-width: 1.2px; fill: none; }
-  </style>
-  <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 8 5 L 0 9 z" fill="#000000"/>
-    </marker>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 260" width="100%" height="auto" font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif">
+  <rect width="980" height="260" fill="#ffffff"/>
 
-  <rect x="4" y="4" width="1032" height="352" rx="14" class="bg"/>
+  <!-- Stage 1: Handwriting & Biometric Input -->
+  <rect x="20" y="36" width="210" height="188" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+  <rect x="34" y="50" width="92" height="20" rx="2" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+  <text x="80" y="64" font-family="'Geist Mono', monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#000000">[ 1. INPUT ]</text>
+  <text x="34" y="94" font-size="14" font-weight="700" fill="#000000">Strokes &amp; Reference</text>
+  <text x="34" y="116" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• 4x 16x16 crop patches</text>
+  <text x="34" y="136" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• Canvas stroke polylines</text>
+  <text x="34" y="156" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• slant | stroke_width</text>
+  <text x="34" y="176" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• x_height | roundness</text>
+  <text x="34" y="198" font-family="'Geist Mono', monospace" font-size="10" fill="#555555">62-char multi-stroke prior</text>
 
-  <!-- Left Cluster: Input Modalities -->
-  <rect x="28" y="32" width="230" height="296" class="cluster"/>
-  <text x="44" y="54" class="eyebrow">1. HANDWRITING INPUT</text>
+  <!-- Arrow 1 -> 2 -->
+  <line x1="230" y1="130" x2="268" y2="130" stroke="#000000" stroke-width="1.2"/>
+  <polygon points="268,126 276,130 268,134" fill="#000000"/>
 
-  <rect x="44" y="72" width="198" height="64" class="node"/>
-  <text x="58" y="98" class="title">Few-Shot Reference Crops</text>
-  <text x="58" y="118" class="sub">4x 16x16 patches ('A','g','m','R')</text>
+  <!-- Stage 2: 3-Tier Synthesis Core (Focal Inverted Black Card) -->
+  <rect x="276" y="36" width="224" height="188" rx="6" fill="#000000" stroke="#000000" stroke-width="1.2"/>
+  <rect x="290" y="50" width="124" height="20" rx="2" fill="#000000" stroke="#ffffff" stroke-width="1.2"/>
+  <text x="352" y="64" font-family="'Geist Mono', monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#ffffff">[ 2. 3-TIER CORE ]</text>
+  <text x="290" y="94" font-size="14" font-weight="700" fill="#ffffff">ScribeFontForGeneration</text>
+  <text x="290" y="116" font-family="'Geist Mono', monospace" font-size="11" fill="#e5e5e5">• Tier 1A: PyTorch 2.94M</text>
+  <text x="290" y="136" font-family="'Geist Mono', monospace" font-size="11" fill="#e5e5e5">• Tier 1B: ONNX Int8 3.1MB</text>
+  <text x="290" y="156" font-family="'Geist Mono', monospace" font-size="11" fill="#e5e5e5">• Tier 2: Zero-Dep JS/Py</text>
+  <text x="290" y="176" font-family="'Geist Mono', monospace" font-size="11" fill="#e5e5e5">• 128-d Calligrapher Latent</text>
+  <text x="290" y="198" font-family="'Geist Mono', monospace" font-size="10" fill="#bbbbbb">gnumanth/scribefont</text>
 
-  <rect x="44" y="152" width="198" height="64" class="node"/>
-  <text x="58" y="178" class="title">Canvas Polylines / Scans</text>
-  <text x="58" y="198" class="sub">Sauvola threshold + strokes</text>
+  <!-- Arrow 2 -> 3 -->
+  <line x1="500" y1="130" x2="538" y2="130" stroke="#000000" stroke-width="1.2"/>
+  <polygon points="538,126 546,130 538,134" fill="#000000"/>
 
-  <rect x="44" y="232" width="198" height="64" class="node"/>
-  <text x="58" y="258" class="title">8-D Biometric Priors</text>
-  <text x="58" y="278" class="sub">slant · weight · x-ratio · flare</text>
+  <!-- Stage 3: 4 Joint Projection Heads -->
+  <rect x="546" y="36" width="206" height="188" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+  <rect x="560" y="50" width="112" height="20" rx="2" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+  <text x="616" y="64" font-family="'Geist Mono', monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#000000">[ 3. FOUR HEADS ]</text>
+  <text x="560" y="94" font-size="14" font-weight="700" fill="#000000">Bézier &amp; Metrics</text>
+  <text x="560" y="116" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">1. contour_head (16-pt M/Q)</text>
+  <text x="560" y="136" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">2. metrics_head (adv, lsb)</text>
+  <text x="560" y="156" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">3. missing_head (p_missing)</text>
+  <text x="560" y="176" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">4. writer_head  (12 styles)</text>
+  <text x="560" y="198" font-family="'Geist Mono', monospace" font-size="10" fill="#555555">invariant: adv &gt;= w + lsb</text>
 
-  <!-- Center Inverted Focal Engine -->
-  <rect x="312" y="32" width="396" height="296" class="cluster"/>
-  <text x="330" y="54" class="eyebrow">2. SCRIBEFONT 3-TIER ENGINE</text>
+  <!-- Arrow 3 -> 4 -->
+  <line x1="752" y1="130" x2="788" y2="130" stroke="#000000" stroke-width="1.2"/>
+  <polygon points="788,126 796,130 788,134" fill="#000000"/>
 
-  <rect x="332" y="74" width="356" height="114" class="focal"/>
-  <text x="352" y="104" class="focal-title">ScribeFont Cross-Attention &amp; Bézier Core</text>
-  <text x="352" y="126" class="focal-sub">• Tier 1A: PyTorch FP32 (2.94M, 11.4 MB, 2.14 UPM MAE)</text>
-  <text x="352" y="146" class="focal-sub">• Tier 1B: Browser ONNX Int8 WASM SIMD (3.15 MB, 0.96 ms)</text>
-  <text x="352" y="166" class="focal-sub">• Tier 2: Zero-Dep JS/Py Fast Engine (0 MB, 0.031 ms/glyph)</text>
-
-  <rect x="332" y="206" width="170" height="96" class="node"/>
-  <text x="346" y="232" class="title">128-d Style Latent</text>
-  <text x="346" y="252" class="sub">Conv2d + 12-writer ID</text>
-  <text x="346" y="270" class="sub">p_missing abstention</text>
-  <text x="346" y="288" class="sub">AUROC = 1.000</text>
-
-  <rect x="518" y="206" width="170" height="96" class="node"/>
-  <text x="532" y="232" class="title">16-Pt Bézier Solver</text>
-  <text x="532" y="252" class="sub">Quadratic M/Q/Z paths</text>
-  <text x="532" y="270" class="sub">Optical kerning pairs</text>
-  <text x="532" y="288" class="sub">adv &gt;= w + lsb check</text>
-
-  <!-- Right Cluster: Outputs -->
-  <rect x="762" y="32" width="250" height="296" class="cluster-dashed"/>
-  <text x="778" y="54" class="eyebrow">3. VERIFIED ARTIFACTS</text>
-
-  <rect x="778" y="72" width="218" height="72" class="node"/>
-  <text x="792" y="98" class="title">Binary OpenType (.ttf)</text>
-  <text x="792" y="118" class="sub">9 SFNT tables · 0xB1B0AFBA</text>
-  <text x="792" y="134" class="sub">7,292 bytes · 0 external deps</text>
-
-  <rect x="778" y="160" width="218" height="68" class="node"/>
-  <text x="792" y="186" class="title">Browser FontFace &amp; SVG</text>
-  <text x="792" y="206" class="sub">Live DOM @font-face &amp; paths</text>
-
-  <rect x="778" y="244" width="218" height="64" class="node"/>
-  <text x="792" y="270" class="title">Calibrated Telemetry</text>
-  <text x="792" y="290" class="sub">p_missing · UPM bbox · kern</text>
-
-  <!-- Orthogonal Routing -->
-  <path d="M 242 104 L 326 104" class="edge" marker-end="url(#arrow)"/>
-  <path d="M 242 184 L 280 184 L 280 135 L 326 135" class="edge" marker-end="url(#arrow)"/>
-  <path d="M 242 264 L 292 264 L 292 165 L 326 165" class="edge" marker-end="url(#arrow)"/>
-
-  <path d="M 417 188 L 417 202" class="edge" marker-end="url(#arrow)"/>
-  <path d="M 603 188 L 603 202" class="edge" marker-end="url(#arrow)"/>
-
-  <path d="M 688 115 L 772 115" class="edge" marker-end="url(#arrow)"/>
-  <path d="M 688 240 L 730 240 L 730 194 L 772 194" class="edge" marker-end="url(#arrow)"/>
-  <path d="M 688 276 L 772 276" class="edge" marker-end="url(#arrow)"/>
+  <!-- Stage 4: Binary OpenType (.ttf) & SVG Compiler -->
+  <rect x="796" y="36" width="164" height="188" rx="6" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+  <rect x="810" y="50" width="98" height="20" rx="2" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
+  <text x="859" y="64" font-family="'Geist Mono', monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#000000">[ 4. OPENTYPE ]</text>
+  <text x="810" y="94" font-size="14" font-weight="700" fill="#000000">Verified Font</text>
+  <text x="810" y="116" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• Binary .ttf (7.3 KB)</text>
+  <text x="810" y="136" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• 9 SFNT tables</text>
+  <text x="810" y="156" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• 0xB1B0AFBA sum</text>
+  <text x="810" y="176" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• Optical kerning</text>
+  <text x="810" y="196" font-family="'Geist Mono', monospace" font-size="11" fill="#222222">• Vector SVG paths</text>
 </svg>
