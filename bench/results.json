@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "seed": 20261019,
+    "bootstrap_resamples": 1000,
+    "os": "Darwin 25.5.0 (arm64)",
+    "python": "3.14.8",
+    "torch": "2.12.1",
+    "onnxruntime": "1.31.0",
+    "parameters": 2941340,
+    "parameters_m": 2.94,
+    "fp32_size_mb": 11.4,
+    "int8_size_mb": 3.15,
+    "compression_ratio": 3.62
+  },
+  "suite_a_wild_fewshot": {
+    "tier1a_pytorch_fp32": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 100.0,
+      "contour_mae_upm": 2.14,
+      "advance_width_mae_upm": 10.61,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.00759,
+      "p_missing_brier": 0.00113,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 3772,
+      "latency_p50_ms": 7.6123,
+      "latency_p95_ms": 11.4627,
+      "latency_p99_ms": 12.017
+    },
+    "tier1b_onnx_int8": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 100.0,
+      "contour_mae_upm": 2.15,
+      "advance_width_mae_upm": 10.63,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.00749,
+      "p_missing_brier": 0.00109,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 3772,
+      "latency_p50_ms": 1.2025,
+      "latency_p95_ms": 1.9507,
+      "latency_p99_ms": 2.046
+    },
+    "tier2_zero_dep": {
+      "overall_accuracy_pct": 73.33,
+      "overall_ci95": [
+        61.67,
+        83.33
+      ],
+      "glyph_fidelity_match_pct": 46.67,
+      "glyph_fidelity_ci95": [
+        26.67,
+        63.33
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 16.67,
+      "contour_mae_upm": 12.71,
+      "advance_width_mae_upm": 39.67,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.0006,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 3772,
+      "latency_p50_ms": 0.0307,
+      "latency_p95_ms": 0.033,
+      "latency_p99_ms": 0.0397
+    }
+  },
+  "suite_b_structured_font": {
+    "tier1a_pytorch_fp32": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 100.0,
+      "contour_mae_upm": 1.11,
+      "advance_width_mae_upm": 2.43,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.00018,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 7292,
+      "latency_p50_ms": 4.3805,
+      "latency_p95_ms": 6.3712,
+      "latency_p99_ms": 6.7869
+    },
+    "tier1b_onnx_int8": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 100.0,
+      "contour_mae_upm": 1.12,
+      "advance_width_mae_upm": 2.39,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.00019,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 7292,
+      "latency_p50_ms": 0.9642,
+      "latency_p95_ms": 1.5815,
+      "latency_p99_ms": 1.6138
+    },
+    "tier2_zero_dep": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 8.06,
+      "contour_mae_upm": 0.0,
+      "advance_width_mae_upm": 0.0,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.0004,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 7292,
+      "latency_p50_ms": 0.0317,
+      "latency_p95_ms": 0.0377,
+      "latency_p99_ms": 0.0402
+    }
+  },
+  "suite_c_adversarial_ink": {
+    "tier1a_pytorch_fp32": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 100.0,
+      "contour_mae_upm": 1.58,
+      "advance_width_mae_upm": 1.86,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.00104,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 1132,
+      "latency_p50_ms": 4.8772,
+      "latency_p95_ms": 8.2963,
+      "latency_p99_ms": 8.7653
+    },
+    "tier1b_onnx_int8": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 100.0,
+      "contour_mae_upm": 1.58,
+      "advance_width_mae_upm": 1.8,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.00106,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 1132,
+      "latency_p50_ms": 1.0024,
+      "latency_p95_ms": 1.1337,
+      "latency_p99_ms": 1.3229
+    },
+    "tier2_zero_dep": {
+      "overall_accuracy_pct": 100.0,
+      "overall_ci95": [
+        100.0,
+        100.0
+      ],
+      "glyph_fidelity_match_pct": 100.0,
+      "glyph_fidelity_ci95": [
+        100.0,
+        100.0
+      ],
+      "missing_abstention_pct": 100.0,
+      "writer_style_id_pct": 16.67,
+      "contour_mae_upm": 0.0,
+      "advance_width_mae_upm": 0.0,
+      "p_missing_auroc": 1.0,
+      "p_missing_ece": 0.0006,
+      "p_missing_brier": 0.0,
+      "opentype_invariants_pct": 100.0,
+      "ttf_binary_valid": true,
+      "ttf_byte_length": 1132,
+      "latency_p50_ms": 0.0315,
+      "latency_p95_ms": 0.0349,
+      "latency_p99_ms": 0.0417
+    }
+  }
+}

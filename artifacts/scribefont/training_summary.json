@@ -1,0 +1,12 @@
+{
+  "model": "ScribeFontForGeneration",
+  "parameters": 2941340,
+  "device": "mps",
+  "train_seconds": 32.38,
+  "best_val_metrics": {
+    "missing_acc": 1.0,
+    "writer_acc": 1.0,
+    "contour_mae_upm": 1.41,
+    "advance_mae_upm": 2.83
+  }
+}

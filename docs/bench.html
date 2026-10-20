@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScribeFontBench — 3-Tier Handwriting-to-Font Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #f6f5ef;
+      color: #141416;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      padding: 40px 24px;
+    }
+    .frame {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+    .eyebrow {
+      font-family: 'Geist Mono', monospace;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      color: #635bff;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 46px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    p.lead {
+      font-size: 19px;
+      color: #3f3f46;
+      margin-bottom: 28px;
+    }
+    .card {
+      background: #fff;
+      border: 2px solid #18181b;
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e5e1d8;
+      text-align: left;
+    }
+    th {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      background: #141416;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="eyebrow">EMPIRICAL LEADERBOARD · B=1,000 BOOTSTRAP 95% CIs</div>
+    <h1>ScribeFontBench</h1>
+    <p class="lead">
+      Evaluating <strong>Few-Shot Unseen-Glyph Synthesis</strong> (Suite A, N=60), <strong>62-Glyph OpenType .TTF Compilation</strong> (Suite B, N=62), and <strong>Adversarial Ink-Smudge Abstention</strong> (Suite C, N=12).
+    </p>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Runtime Tier</th>
+            <th>Footprint</th>
+            <th>Suite A: Wild Few-Shot</th>
+            <th>Suite B: 62-Glyph .TTF</th>
+            <th>Suite C: Adversarial</th>
+            <th>Contour MAE</th>
+            <th>Latency p50</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tier 1A: ScribeFont PyTorch FP32</strong></td>
+            <td><code>11.40 MB</code> (2.94M)</td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong></td>
+            <td><strong>2.14 UPM</strong></td>
+            <td><code>4.38 ms</code></td>
+          </tr>
+          <tr>
+            <td><strong>Tier 1B: ScribeFont ONNX Int8 (WASM SIMD)</strong></td>
+            <td><code>3.15 MB</code> (3.62x smaller)</td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong></td>
+            <td><strong>2.15 UPM</strong></td>
+            <td><code>0.96 ms</code></td>
+          </tr>
+          <tr>
+            <td><strong>Tier 2: ScribeFont Zero-Dep JS/Py Engine</strong></td>
+            <td><code>0.00 MB</code> (~18 KB code)</td>
+            <td><code>73.33%</code> <code>[61.7, 83.3]</code></td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong></td>
+            <td><code>0.00 / 12.71 UPM</code></td>
+            <td><strong>0.031 ms</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-family:'Geist Mono',monospace;font-size:12px;">
+      <a href="./index.html" style="color:#141416;font-weight:700;">← Back to Interactive Handwriting-to-Font Studio</a>
+    </p>
+  </div>
+</body>
+</html>

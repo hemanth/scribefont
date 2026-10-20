@@ -1,0 +1,16 @@
+{
+  "architectures": [
+    "ScribeFontForGeneration"
+  ],
+  "dropout": 0.03,
+  "dtype": "float32",
+  "hidden_dim": 256,
+  "model_type": "scribefont",
+  "num_heads": 8,
+  "num_layers": 4,
+  "num_points": 16,
+  "num_writers": 12,
+  "style_dim": 128,
+  "transformers_version": "5.12.1",
+  "vocab_size": 62
+}

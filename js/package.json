@@ -1,0 +1,34 @@
+{
+  "name": "scribefont",
+  "version": "0.1.0",
+  "description": "Single-pass handwriting-to-font synthesis, calligrapher style extraction, Bézier glyph vectorization, and zero-dependency binary TrueType (.ttf) compilation.",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "scripts": {
+    "test": "node --test test/index.test.js"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "handwriting",
+    "font",
+    "truetype",
+    "opentype",
+    "ttf",
+    "bezier",
+    "onnx",
+    "typography"
+  ],
+  "author": "Hemanth HM <hemanth@h3manth.com> (https://h3manth.com)",
+  "license": "MIT"
+}

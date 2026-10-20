@@ -1,0 +1,7 @@
+{
+  "onnx_fp32_path": "/Users/lika/labs/scribefont/artifacts/scribefont/onnx/model.onnx",
+  "onnx_fp32_size_mb": 11.4,
+  "onnx_int8_path": "/Users/lika/labs/scribefont/artifacts/scribefont/onnx/model_quantized.onnx",
+  "onnx_int8_size_mb": 3.15,
+  "compression_ratio": 3.62
+}

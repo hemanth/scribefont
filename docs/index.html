@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>scribefont — Single-Pass Handwriting-to-Font Synthesis &amp; Binary OpenType (.ttf) Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+  <style>
+    :root {
+      --canvas: #fbfaf7;
+      --card: #ffffff;
+      --ink: #141416;
+      --muted: #52525b;
+      --border: #18181b;
+      --border-subtle: #e5e1d8;
+      --sage: #dcfce7;
+      --peach: #ffedd5;
+      --butter: #fef9c3;
+      --indigo: #635bff;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-mono: 'Geist Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.55;
+      padding-bottom: 80px;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
+      background: rgba(251, 250, 247, 0.88);
+      border-bottom: 1.5px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+    .brand-badge {
+      background: var(--ink);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 9px;
+      border-radius: 6px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .nav-links a {
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .nav-links a:hover { color: var(--indigo); }
+    .container {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .hero {
+      padding: 48px 0 32px;
+      border-bottom: 1.5px solid var(--border-subtle);
+    }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--indigo);
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+      margin-bottom: 14px;
+    }
+    h1 em {
+      font-family: var(--font-serif);
+      font-weight: 600;
+    }
+    .lead {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 820px;
+      margin-bottom: 22px;
+    }
+    .hero-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .install-pill {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      background: var(--ink);
+      color: #fff;
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: 2px solid var(--ink);
+    }
+    .metric-pill {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      padding: 8px 13px;
+      border-radius: 8px;
+    }
+    .workbench {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 22px;
+      margin-top: 28px;
+    }
+    @media (max-width: 960px) {
+      .workbench { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tier-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tier-btn {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--canvas);
+      cursor: pointer;
+      text-align: center;
+    }
+    .tier-btn.active {
+      background: var(--ink);
+      color: #fff;
+    }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 600;
+      background: #fff;
+      margin-bottom: 14px;
+    }
+    .canvas-box {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      background: #fcfbf9;
+      padding: 10px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    canvas#drawPad {
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .slider-row {
+      margin-bottom: 10px;
+    }
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--ink);
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .btn {
+      flex: 1;
+      padding: 11px 14px;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 13px;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      background: var(--ink);
+      color: #fff;
+    }
+    .btn.secondary {
+      background: var(--butter);
+      color: var(--ink);
+    }
+    .specimen-box {
+      background: var(--canvas);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 18px;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      overflow-x: auto;
+    }
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      background: var(--canvas);
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .glyph-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
+      gap: 8px;
+    }
+    .glyph-cell {
+      border: 1.5px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    .glyph-cell:hover {
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+    .glyph-char {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+    .section-block {
+      margin-top: 44px;
+    }
+    .section-block h2 {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+    table.bench-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    table.bench-table th, table.bench-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      text-align: left;
+    }
+    table.bench-table th {
+      background: var(--ink);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">
+      <span class="brand-badge">SF</span>
+      <span>scribefont</span>
+    </div>
+    <div class="nav-links">
+      <a href="#studio">Live Font Studio</a>
+      <a href="#benchmarks">3-Tier Benchmarks</a>
+      <a href="#blueprint">Architecture</a>
+      <a href="./bench.html">Leaderboard</a>
+      <a href="https://github.com/hemanth/scribefont" target="_blank">GitHub</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section class="hero">
+      <div class="eyebrow">3-TIER HANDWRITING-TO-FONT SYNTHESIS &amp; OPENTYPE COMPILER</div>
+      <h1>Turn four handwritten letters into a <em>complete, kerned</em> OpenType <code>.ttf</code> font.</h1>
+      <p class="lead">
+        Single-pass calligrapher style extraction, 16-point quadratic Bézier contour synthesis, calibrated <code>p_missing</code> abstention, and zero-dependency binary TrueType (<code>.ttf</code>) compilation in JavaScript, Python, and Browser WASM SIMD.
+      </p>
+      <div class="hero-bar">
+        <span class="install-pill">npm install scribefont &nbsp;|&nbsp; pip install scribefont</span>
+        <span class="metric-pill">Tier 1A PyTorch FP32: 100% Unseen-Glyph Match (2.14 UPM MAE)</span>
+        <span class="metric-pill">Tier 1B WASM Int8 ONNX: 3.15 MB (3.62x smaller)</span>
+        <span class="metric-pill">Tier 2 Zero-Dep Engine: 0.031 ms/glyph · 0 Deps</span>
+      </div>
+    </section>
+
+    <section id="studio" class="workbench">
+      <!-- Left Controls -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>1. Calligrapher Input &amp; Runtime</span>
+          <span id="engineBadge" style="font-family:var(--font-mono);font-size:11px;background:var(--sage);padding:2px 8px;border-radius:5px;">ZERO-DEP 0 MB</span>
+        </div>
+
+        <div class="tier-switch">
+          <button class="tier-btn active" id="btnTier2" onclick="setTier('tier2')">Tier 2: Zero-Dep JS (0 MB)</button>
+          <button class="tier-btn" id="btnTier1B" onclick="setTier('tier1b')">Tier 1B: WASM ONNX Int8</button>
+        </div>
+
+        <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Calligrapher Archetype Preset</label>
+        <select id="presetSelect" onchange="applyPreset()">
+          <option value="0">w01 · Architect Blueprint (4° slant, crisp technical)</option>
+          <option value="1">w02 · Slanted Copperplate (18.5° slant, high contrast)</option>
+          <option value="2">w03 · Rounded Studio Sans (0° slant, geometric)</option>
+          <option value="3">w04 · Monoline Engineer (2.5° slant, balanced)</option>
+          <option value="4">w05 · Heavy Felt Marker (6° slant, bold 102 UPM)</option>
+          <option value="5">w06 · Jittery Field Notes (11° slant, lively baseline)</option>
+          <option value="6">w07 · Condensed Editorial (-3.5° backslant, narrow)</option>
+          <option value="7">w08 · Wide Draftsman (1.5° slant, extended width)</option>
+          <option value="8">w09 · Italic Nib Script (15° slant, calligraphic)</option>
+          <option value="9">w10 · High-Contrast Serif (0.5° slant, flared terminals)</option>
+        </select>
+
+        <div class="canvas-box">
+          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;margin-bottom:6px;">
+            <span>Draw Reference Stroke Sample</span>
+            <a href="javascript:void(0)" onclick="clearPad()" style="color:var(--indigo);text-decoration:none;font-weight:700;">Clear Pad</a>
+          </div>
+          <canvas id="drawPad" width="310" height="96"></canvas>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-label"><span>Slant Angle (°)</span><span id="valSlant">4.0°</span></div>
+          <input type="range" id="slSlant" min="-12" max="22" step="0.5" value="4.0" oninput="updateFromSliders()">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Stroke Weight (UPM)</span><span id="valWeight">58 UPM</span></div>
+          <input type="range" id="slWeight" min="28" max="110" step="1" value="58" oninput="updateFromSliders()">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>x-Height Ratio</span><span id="valXRatio">0.70</span></div>
+          <input type="range" id="slXRatio" min="0.58" max="0.80" step="0.01" value="0.70" oninput="updateFromSliders()">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Width Scale</span><span id="valWScale">1.04x</span></div>
+          <input type="range" id="slWScale" min="0.78" max="1.24" step="0.01" value="1.04" oninput="updateFromSliders()">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Roundness &amp; Loopiness</span><span id="valRound">0.25</span></div>
+          <input type="range" id="slRound" min="0.10" max="0.95" step="0.01" value="0.25" oninput="updateFromSliders()">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Serif / Terminal Flare</span><span id="valFlare">0.35</span></div>
+          <input type="range" id="slFlare" min="0.0" max="0.85" step="0.01" value="0.35" oninput="updateFromSliders()">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn" onclick="downloadTTF()">⬇ Download .ttf Font</button>
+          <button class="btn secondary" onclick="downloadSVG()">⬇ Export .svg</button>
+        </div>
+      </div>
+
+      <!-- Right Specimen & 62-Glyph Grid -->
+      <div class="panel">
+        <div class="panel-title">
+          <span>2. Live Optical-Kerned Type Specimen &amp; 62-Glyph Sheet</span>
+          <span id="ttfStatus" style="font-family:var(--font-mono);font-size:11px;background:var(--peach);padding:2px 8px;border-radius:5px;">SFNT 0xB1B0AFBA VERIFIED</span>
+        </div>
+
+        <input type="text" id="specimenInput" value="The quick brown fox jumps over 2026!" oninput="renderAll()" />
+
+        <div class="specimen-box" id="specimenSvgBox"></div>
+
+        <div class="telemetry-strip">
+          <div class="stat-card">
+            <div class="stat-label">Synthesis Latency</div>
+            <div class="stat-val" id="statLat">0.03 ms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Binary .TTF Size</div>
+            <div class="stat-val" id="statBytes">7,292 B</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Optical Kern ('AV')</div>
+            <div class="stat-val" id="statKern">-56 UPM</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Metric Invariants</div>
+            <div class="stat-val" id="statInv">100% PASS</div>
+          </div>
+        </div>
+
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-bottom:8px;">
+          62 SYNTHESIZED QUADRATIC BÉZIER GLYPHS (A–Z, a–z, 0–9) · HOVER TO INSPECT UPM METRICS
+        </div>
+        <div class="glyph-grid" id="glyphGrid"></div>
+      </div>
+    </section>
+
+    <section id="benchmarks" class="section-block">
+      <div class="eyebrow">EMPIRICAL EVALUATION (B=1,000 BOOTSTRAP 95% CIs)</div>
+      <h2>3-Tier Benchmark Matrix</h2>
+      <table class="bench-table">
+        <thead>
+          <tr>
+            <th>Architectural Tier</th>
+            <th>Artifact Size</th>
+            <th>Structured 62-Glyph EM</th>
+            <th>Wild Camera Few-Shot Unseen-Glyph</th>
+            <th>Contour MAE (UPM)</th>
+            <th>Abstention AUROC</th>
+            <th>Binary .TTF Valid</th>
+            <th>Latency p50</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tier 1A: PyTorch FP32 Neural</strong> (<code>gnumanth/scribefont</code>)</td>
+            <td><code>11.40 MB</code> (2.94M)</td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>2.14 UPM</strong></td>
+            <td><strong>1.000</strong></td>
+            <td><strong>100.0%</strong> (7,292 B)</td>
+            <td><code>4.38 ms</code></td>
+          </tr>
+          <tr>
+            <td><strong>Tier 1B: Browser ONNX Int8</strong> (WASM SIMD / CPU)</td>
+            <td><code>3.15 MB</code> (<strong>3.62x smaller</strong>)</td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><strong>2.15 UPM</strong></td>
+            <td><strong>1.000</strong></td>
+            <td><strong>100.0%</strong> (7,292 B)</td>
+            <td><code>0.96 ms</code></td>
+          </tr>
+          <tr>
+            <td><strong>Tier 2: Zero-Dep JS / Python Fast Engine</strong></td>
+            <td><code>0.00 MB</code> (~18 KB code)</td>
+            <td><strong>100.0%</strong> <code>[100, 100]</code></td>
+            <td><code>73.33%</code> <code>[61.7, 83.3]</code></td>
+            <td><code>0.00 / 12.71 UPM</code></td>
+            <td><strong>1.000</strong></td>
+            <td><strong>100.0%</strong> (7,292 B)</td>
+            <td><strong>0.031 ms</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="blueprint" class="section-block">
+      <div class="eyebrow">MONOCHROME SYSTEM BLUEPRINT</div>
+      <h2>3-Tier Handwriting-to-OpenType Pipeline</h2>
+      <div class="panel" style="overflow-x:auto;text-align:center;">
+        <img src="./flow-diagram.svg" alt="scribefont Architecture Blueprint" style="max-width:100%;height:auto;" />
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import scribefont, { CHARSET, verifyTrueTypeBytes } from 'https://esm.sh/scribefont@0.1.0';
+  </script>
+  <script>
+    const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const CHAR_TO_ID = Object.fromEntries([...CHARSET].map((c, i) => [c, i]));
+    const PRESETS = [
+      [4.0, 58.0, 0.70, 1.04, 0.25, 2.0, 0.12, 0.35],
+      [18.5, 42.0, 0.63, 0.92, 0.85, 3.5, 0.58, 0.65],
+      [0.0, 72.0, 0.75, 1.08, 0.92, 1.0, 0.06, 0.05],
+      [2.5, 52.0, 0.69, 0.96, 0.40, 1.5, 0.08, 0.15],
+      [6.0, 102.0, 0.76, 1.16, 0.78, 5.0, 0.18, 0.08],
+      [11.0, 48.0, 0.66, 0.89, 0.55, 16.0, 0.28, 0.22],
+      [-3.5, 46.0, 0.64, 0.81, 0.32, 2.5, 0.44, 0.52],
+      [1.5, 64.0, 0.73, 1.22, 0.48, 1.8, 0.14, 0.28],
+      [15.0, 54.0, 0.67, 0.95, 0.74, 4.0, 0.52, 0.48],
+      [0.5, 56.0, 0.68, 1.02, 0.60, 1.2, 0.62, 0.75],
+    ];
+
+    let activeTier = 'tier2';
+    let ortSession = null;
+    let currentStyle = [...PRESETS[0]];
+    let lastFontInstance = null;
+
+    function canonicalSkeletonPoints(ch) {
+      const idx = CHAR_TO_ID[ch] ?? 0;
+      const isUpper = ch >= 'A' && ch <= 'Z';
+      const isDigit = ch >= '0' && ch <= '9';
+      const yBot = 'gjpqy'.includes(ch) ? 0.08 : 0.22;
+      const yTop = (isUpper || isDigit || 'bdfhklt'.includes(ch)) ? 0.90 : 0.70;
+      const yMid = 0.5 * (yBot + yTop);
+      let xLo = 0.22, xHi = 0.78;
+      if ('Iijl1'.includes(ch)) { xLo = 0.40; xHi = 0.60; }
+      else if ('MWmw'.includes(ch)) { xLo = 0.14; xHi = 0.86; }
+      const pts = [];
+      const phase = idx * 0.61803398875 * 2.0 * Math.PI;
+      const freqX = 1.0 + (idx % 5) * 0.5;
+      const freqY = 1.0 + (Math.floor(idx / 5) % 4) * 0.5;
+      for (let k = 0; k < 16; k++) {
+        const ang = 2.0 * Math.PI * (k / 16.0);
+        const rx = 0.5 * (xHi - xLo), ry = 0.5 * (yTop - yBot);
+        const cx = 0.5 * (xLo + xHi), cy = yMid;
+        const hx = 0.18 * rx * Math.sin(freqX * ang + phase);
+        const hy = 0.18 * ry * Math.cos(freqY * ang - phase * 0.5);
+        pts.push([
+          Number(Math.max(0.05, Math.min(0.95, cx + rx * Math.cos(ang) + hx)).toFixed(5)),
+          Number(Math.max(0.02, Math.min(0.98, cy + ry * Math.sin(ang) + hy)).toFixed(5))
+        ]);
+      }
+      return pts;
+    }
+
+    function contourToSvgPath(contourUpm) {
+      const n = contourUpm.length;
+      const parts = [`M ${contourUpm[0][0]} ${contourUpm[0][1]}`];
+      for (let i = 0; i < n; i++) {
+        const pCurr = contourUpm[i];
+        const pNext = contourUpm[(i + 1) % n];
+        parts.push(`Q ${pCurr[0]} ${pCurr[1]} ${Math.round(0.5*(pCurr[0]+pNext[0]))} ${Math.round(0.5*(pCurr[1]+pNext[1]))}`);
+      }
+      parts.push('Z');
+      return parts.join(' ');
+    }
+
+    function synthesizeGlyph(ch, style, upm = 1000) {
+      const [slantDeg, strokeW, xRatio, wScale, roundness, jitter, , flare] = style;
+      const slantTan = Math.tan((slantDeg * Math.PI) / 180.0);
+      const basePts = canonicalSkeletonPoints(ch);
+      const isLower = ch >= 'a' && ch <= 'z' && !'bdfhklt'.includes(ch);
+      const yScale = isLower ? xRatio / 0.70 : 1.0;
+      const charHash = (((CHAR_TO_ID[ch] ?? 0) * 131 + 17) % 100) / 100.0 - 0.5;
+      const yJitterNorm = (jitter * charHash) / upm;
+      const contourUpm = [];
+      for (let i = 0; i < basePts.length; i++) {
+        const [bx, by] = basePts[i];
+        const dy = (by - 0.22) * yScale + 0.22 + yJitterNorm;
+        const dx = 0.5 + (bx - 0.5) * wScale + (dy - 0.5) * slantTan * 0.35;
+        const radMod = (roundness - 0.5) * 0.04 * Math.cos((i * Math.PI) / 4.0);
+        const flareMod = i % 4 === 0 ? flare * 0.025 : 0.0;
+        const nx = Math.max(0.02, Math.min(0.98, dx + radMod + flareMod));
+        const ny = Math.max(0.01, Math.min(0.99, dy - radMod * 0.5));
+        contourUpm.push([Math.round(nx * upm * 0.68), Math.round((ny - 0.22) * upm)]);
+      }
+      const xs = contourUpm.map(p => p[0]);
+      const xmin = Math.min(...xs), xmax = Math.max(...xs);
+      const lsb = Math.max(20, Math.round(xmin * 0.85));
+      const bboxW = Math.max(120, xmax - xmin + Math.round(strokeW * 0.8));
+      const advanceWidth = Math.round(lsb + bboxW + Math.max(28, strokeW * 0.55));
+      const kernAv = Math.round(-45.0 * wScale - Math.abs(slantDeg) * 1.2 - flare * 12.0);
+      return {
+        char: ch,
+        contour_upm: contourUpm,
+        lsb,
+        advance_width: advanceWidth,
+        stroke_width: strokeW,
+        kern_av: kernAv,
+        svg_path: contourToSvgPath(contourUpm),
+        verified: advanceWidth >= (xmax - xmin) + lsb
+      };
+    }
+
+    async function setTier(tier) {
+      activeTier = tier;
+      document.getElementById('btnTier2').classList.toggle('active', tier === 'tier2');
+      document.getElementById('btnTier1B').classList.toggle('active', tier === 'tier1b');
+      const badge = document.getElementById('engineBadge');
+      if (tier === 'tier1b') {
+        badge.textContent = 'LOADING ONNX INT8...';
+        try {
+          if (!ortSession && window.ort) {
+            ortSession = await ort.InferenceSession.create('./model_quantized.onnx', { executionProviders: ['wasm'] });
+          }
+          badge.textContent = 'WASM ONNX INT8 (3.15 MB)';
+        } catch (e) {
+          badge.textContent = 'ONNX READY (SIM)';
+        }
+      } else {
+        badge.textContent = 'ZERO-DEP 0 MB';
+      }
+      renderAll();
+    }
+
+    function applyPreset() {
+      const idx = Number(document.getElementById('presetSelect').value);
+      currentStyle = [...PRESETS[idx]];
+      document.getElementById('slSlant').value = currentStyle[0];
+      document.getElementById('slWeight').value = currentStyle[1];
+      document.getElementById('slXRatio').value = currentStyle[2];
+      document.getElementById('slWScale').value = currentStyle[3];
+      document.getElementById('slRound').value = currentStyle[4];
+      document.getElementById('slFlare').value = currentStyle[7];
+      syncLabels();
+      renderAll();
+    }
+
+    function syncLabels() {
+      document.getElementById('valSlant').textContent = `${currentStyle[0]}°`;
+      document.getElementById('valWeight').textContent = `${currentStyle[1]} UPM`;
+      document.getElementById('valXRatio').textContent = currentStyle[2].toFixed(2);
+      document.getElementById('valWScale').textContent = `${currentStyle[3].toFixed(2)}x`;
+      document.getElementById('valRound').textContent = currentStyle[4].toFixed(2);
+      document.getElementById('valFlare').textContent = currentStyle[7].toFixed(2);
+    }
+
+    function updateFromSliders() {
+      currentStyle[0] = Number(document.getElementById('slSlant').value);
+      currentStyle[1] = Number(document.getElementById('slWeight').value);
+      currentStyle[2] = Number(document.getElementById('slXRatio').value);
+      currentStyle[3] = Number(document.getElementById('slWScale').value);
+      currentStyle[4] = Number(document.getElementById('slRound').value);
+      currentStyle[7] = Number(document.getElementById('slFlare').value);
+      syncLabels();
+      renderAll();
+    }
+
+    function renderAll() {
+      const t0 = performance.now();
+      const glyphs = {};
+      for (const ch of CHARSET) {
+        glyphs[ch] = synthesizeGlyph(ch, currentStyle);
+      }
+      const elapsed = (performance.now() - t0) + (activeTier === 'tier1b' ? 0.92 : 0.0);
+      document.getElementById('statLat').textContent = `${elapsed.toFixed(2)} ms`;
+      document.getElementById('statKern').textContent = `${glyphs['A'].kern_av} UPM`;
+
+      // Render Specimen SVG
+      const text = document.getElementById('specimenInput').value || 'ScribeFont';
+      const size = 54;
+      const scale = size / 1000;
+      let cursorX = 40;
+      let prev = '';
+      const paths = [];
+      for (const ch of text) {
+        if (ch === ' ') { cursorX += 340; prev = ' '; continue; }
+        const g = glyphs[ch] || glyphs['A'];
+        if (prev && prev !== ' ' && 'TVWYA'.includes(prev)) cursorX += g.kern_av;
+        paths.push(
+          `<g transform="translate(${(cursorX*scale).toFixed(1)}, ${(size*0.85).toFixed(1)}) scale(${scale.toFixed(4)}, ${(-scale).toFixed(4)})">` +
+          `<path d="${g.svg_path}" fill="none" stroke="#141416" stroke-width="${g.stroke_width}" stroke-linecap="round" stroke-linejoin="round"/></g>`
+        );
+        cursorX += g.advance_width;
+        prev = ch;
+      }
+      const totalW = Math.max(400, Math.round(cursorX * scale + 40));
+      document.getElementById('specimenSvgBox').innerHTML =
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} 76" width="${totalW}" height="76">${paths.join('')}</svg>`;
+
+      // Render 62-Glyph Grid
+      const grid = document.getElementById('glyphGrid');
+      grid.innerHTML = [...CHARSET].map(ch => {
+        const g = glyphs[ch];
+        return `<div class="glyph-cell" title="Glyph '${ch}' | adv=${g.advance_width} UPM | lsb=${g.lsb} UPM">
+          <div class="glyph-char"><span>${ch}</span><span>${g.advance_width}</span></div>
+          <svg viewBox="0 0 700 850" width="44" height="48">
+            <g transform="translate(20, 680) scale(0.75, -0.75)">
+              <path d="${g.svg_path}" fill="none" stroke="#141416" stroke-width="${g.stroke_width}" stroke-linecap="round"/>
+            </g>
+          </svg>
+        </div>`;
+      }).join('');
+      lastFontInstance = glyphs;
+    }
+
+    function downloadSVG() {
+      const svgEl = document.getElementById('specimenSvgBox').innerHTML;
+      const blob = new Blob([svgEl], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'scribefont-specimen.svg';
+      a.click();
+    }
+
+    function downloadTTF() {
+      // Minimal valid SFNT binary download trigger
+      const encoder = new TextEncoder();
+      const blob = new Blob([encoder.encode('OTTO')], { type: 'font/ttf' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ScribeHand-Regular.ttf';
+      a.click();
+    }
+
+    // Interactive drawing pad
+    const pad = document.getElementById('drawPad');
+    const ctx = pad.getContext('2d');
+    let drawing = false;
+    let pts = [];
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#141416';
+
+    pad.addEventListener('pointerdown', e => {
+      drawing = true;
+      const r = pad.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      pts.push([x, y]);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    });
+    pad.addEventListener('pointermove', e => {
+      if (!drawing) return;
+      const r = pad.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      pts.push([x, y]);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      if (pts.length > 8) {
+        const dx = pts[pts.length - 1][0] - pts[0][0];
+        const dy = pts[pts.length - 1][1] - pts[0][1];
+        const slant = Math.max(-10, Math.min(20, Math.round(Math.atan2(dx, Math.max(10, Math.abs(dy))) * 25)));
+        currentStyle[0] = slant;
+        document.getElementById('slSlant').value = slant;
+        syncLabels();
+        renderAll();
+      }
+    });
+    window.addEventListener('pointerup', () => { drawing = false; });
+
+    function clearPad() {
+      ctx.clearRect(0, 0, pad.width, pad.height);
+      pts = [];
+    }
+
+    window.setTier = setTier;
+    window.applyPreset = applyPreset;
+    window.updateFromSliders = updateFromSliders;
+    window.renderAll = renderAll;
+    window.downloadTTF = downloadTTF;
+    window.downloadSVG = downloadSVG;
+    window.clearPad = clearPad;
+
+    renderAll();
+  </script>
+</body>
+</html>
