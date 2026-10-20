@@ -1,7 +1,7 @@
 {
   "name": "scribefont",
-  "version": "0.1.1",
-  "description": "Single-pass handwriting-to-font synthesis, calligrapher style extraction, Bézier glyph vectorization, and zero-dependency binary TrueType (.ttf) compilation.",
+  "version": "0.2.0",
+  "description": "Handwriting image-to-font multi-contour vectorizer, calligrapher style extraction, and zero-dependency binary TrueType (.ttf) compilation.",
   "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",

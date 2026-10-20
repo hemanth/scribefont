@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import scribefont, { verifyTrueTypeBytes, synthesizeGlyphFast } from '../src/index.js';
 
-test('scribefont synthesizes 62 glyphs, optical kerning, SVG, and valid binary .ttf', () => {
+test('scribefont synthesizes 62 multi-contour handwritten glyphs, optical kerning, SVG, and valid binary .ttf', () => {
   const font = scribefont(
     {
       style: {
@@ -27,6 +27,7 @@ test('scribefont synthesizes 62 glyphs, optical kerning, SVG, and valid binary .
   assert.equal(gA.char, 'A');
   assert.equal(gA.is_missing, false);
   assert.ok(gA.p_missing < 0.01);
+  assert.ok(gA.contours.length >= 2); // outer contour + inner counter hole
   assert.equal(gA.contour_upm.length, 16);
   assert.ok(gA.svg_path.startsWith('M '));
 
@@ -41,7 +42,35 @@ test('scribefont synthesizes 62 glyphs, optical kerning, SVG, and valid binary .
   const check = verifyTrueTypeBytes(ttf);
   assert.equal(check.valid, true);
   assert.equal(check.checksum_ok, true);
-  assert.ok(check.byte_length > 2000);
+  assert.ok(check.byte_length > 8000);
+});
+
+test('scribefont.fromImage traces synthetic handwriting image bitmap into valid multi-contour .ttf', () => {
+  const W = 120, H = 60;
+  const data = new Uint8ClampedArray(W * H * 4).fill(250);
+  // Draw two dark handwritten strokes ('I' and 'O')
+  for (let r = 12; r < 48; r++) {
+    for (let c = 18; c < 25; c++) {
+      const idx = (r * W + c) * 4;
+      data[idx] = 20; data[idx + 1] = 20; data[idx + 2] = 25;
+    }
+  }
+  for (let r = 14; r < 46; r++) {
+    for (let c = 50; c < 82; c++) {
+      const dist = Math.hypot(c - 66, r - 30);
+      if (dist >= 9 && dist <= 15) {
+        const idx = (r * W + c) * 4;
+        data[idx] = 20; data[idx + 1] = 20; data[idx + 2] = 25;
+      }
+    }
+  }
+  const font = scribefont.fromImage({ width: W, height: H, data }, { transcript: 'IO', family: 'ScanHand' });
+  assert.equal(font.traced_count, 2);
+  assert.equal(font.glyph('I').source, 'traced_image');
+  assert.equal(font.glyph('O').source, 'traced_image');
+  assert.ok(font.glyph('O').contours.length >= 2); // outer + inner hole traced!
+  const ttf = font.toTTF();
+  assert.equal(verifyTrueTypeBytes(ttf).valid, true);
 });
 
 test('synthesizeGlyphFast abstains with calibrated p_missing on blank/smudge cells', () => {

@@ -1,4 +1,4 @@
-"""Unit tests for scribefont Python engine and binary TrueType (.ttf) compiler."""
+"""Unit tests for scribefont Python engine, Image-to-Font vectorizer, and binary TrueType (.ttf) compiler."""
 from __future__ import annotations
 
 import sys
@@ -35,6 +35,7 @@ class TestScribeFont(unittest.TestCase):
         g_a = font.glyph("A")
         self.assertFalse(g_a["is_missing"])
         self.assertLess(g_a["p_missing"], 0.01)
+        self.assertGreaterEqual(len(g_a["contours"]), 2)  # outer + inner counter hole
         self.assertEqual(len(g_a["contour_upm"]), 16)
         self.assertTrue(g_a["svg_path"].startswith("M "))
 
@@ -48,7 +49,18 @@ class TestScribeFont(unittest.TestCase):
         chk = verify_truetype_bytes(ttf_bytes)
         self.assertTrue(chk["valid"])
         self.assertTrue(chk["checksum_ok"])
-        self.assertGreater(chk["byte_length"], 2000)
+        self.assertGreater(chk["byte_length"], 8000)
+
+    def test_from_handwriting_image(self) -> None:
+        sample_img = ROOT.parent / "docs" / "samples" / "sample-notebook.png"
+        if sample_img.exists():
+            font = scribefont.from_image(sample_img, family="NotebookHand")
+            self.assertGreaterEqual(font.traced_count, 60)
+            self.assertEqual(font.glyph("A")["source"], "traced_image")
+            ttf_bytes = font.to_ttf()
+            chk = verify_truetype_bytes(ttf_bytes)
+            self.assertTrue(chk["valid"])
+            self.assertTrue(chk["checksum_ok"])
 
     def test_blank_cell_abstention(self) -> None:
         blank_patch = [0.02] * 256
