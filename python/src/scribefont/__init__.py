@@ -2,13 +2,23 @@
 from __future__ import annotations
 
 from .engine import (
+    BENGALI_CHARSET,
     CHARSET,
+    DEVANAGARI_CHARSET,
+    DEVANAGARI_SAMPLE_LINES,
+    INDIC_HANDWRITING_BANK,
+    INDIC_SCRIPTS,
+    KANNADA_CHARSET,
+    SANSKRIT_SAMPLE_LINES,
+    TAMIL_CHARSET,
+    TELUGU_CHARSET,
     ScribeFont,
     canonical_skeleton_points,
     compile_truetype_font,
     contours_to_svg_d,
     denormalize_style_feats,
     rasterize_strokes_to_image,
+    reorder_indic_visual_order,
     scribefont,
     segment_and_trace_image,
     synthesize_glyph_fast,
@@ -17,17 +27,27 @@ from .engine import (
 )
 
 __all__ = [
+    "BENGALI_CHARSET",
     "CHARSET",
+    "DEVANAGARI_CHARSET",
+    "DEVANAGARI_SAMPLE_LINES",
+    "INDIC_HANDWRITING_BANK",
+    "INDIC_SCRIPTS",
+    "KANNADA_CHARSET",
+    "SANSKRIT_SAMPLE_LINES",
+    "TAMIL_CHARSET",
+    "TELUGU_CHARSET",
     "ScribeFont",
     "canonical_skeleton_points",
     "compile_truetype_font",
     "contours_to_svg_d",
     "denormalize_style_feats",
     "rasterize_strokes_to_image",
+    "reorder_indic_visual_order",
     "scribefont",
     "segment_and_trace_image",
     "synthesize_glyph_fast",
     "trace_bitmap_to_contours",
     "verify_truetype_bytes",
 ]
-__version__ = "0.3.0"
+__version__ = "0.4.0"

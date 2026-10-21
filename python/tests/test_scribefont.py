@@ -8,7 +8,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from scribefont import scribefont, synthesize_glyph_fast, verify_truetype_bytes
+from scribefont import (
+    DEVANAGARI_CHARSET,
+    INDIC_SCRIPTS,
+    reorder_indic_visual_order,
+    scribefont,
+    synthesize_glyph_fast,
+    verify_truetype_bytes,
+)
 
 
 class TestScribeFont(unittest.TestCase):
@@ -96,6 +103,44 @@ class TestScribeFont(unittest.TestCase):
         self.assertTrue(res["is_missing"])
         self.assertGreater(res["p_missing"], 0.99)
         self.assertIsNone(res["value"])
+
+    def test_indic_sanskrit_devanagari_and_multilingual(self) -> None:
+        """TDD: Sanskrit/Devanagari and Indic scripts (Kannada, Tamil, Telugu, Bengali) synthesize biometric glyphs and compile valid .ttf."""
+        sanskrit_font = scribefont(
+            {"style": [6.0, 62.0, 0.72, 1.02, 0.65, 2.0, 0.2, 0.25]},
+            family="ScribeSanskrit",
+            script="sanskrit",
+        )
+        self.assertEqual(sanskrit_font.script, "sanskrit")
+        self.assertTrue(sanskrit_font.invariants_passed)
+        self.assertGreaterEqual(len(sanskrit_font.glyphs), len(DEVANAGARI_CHARSET))
+
+        for ch in ("ॐ", "ऽ", "।", "॥", "क", "अ", "ऋ", "९"):
+            g = sanskrit_font.glyph(ch)
+            self.assertFalse(g["is_missing"])
+            self.assertEqual(g["source"], "indic_biometric_bank")
+            self.assertGreaterEqual(len(g["contours"]), 1)
+            self.assertGreater(g["advance_width"], 150)
+
+        for mark in ("े", "ै", "ु", "ू", "ृ", "्", "ं", "ँ"):
+            gm = sanskrit_font.glyph(mark)
+            self.assertTrue(gm["combining"])
+            self.assertEqual(gm["advance_width"], 0)
+            self.assertLess(gm["lsb"], 0)
+
+        self.assertEqual(reorder_indic_visual_order("कि"), "िक")
+        self.assertEqual(reorder_indic_visual_order("प्रि"), "िप्र")
+
+        svg = sanskrit_font.render_svg("सत्यमेव जयते ॥ वसुधैव कुटुम्बकम् ॐ", size=52)
+        self.assertIn("<svg", svg)
+        self.assertIn("<path", svg)
+        self.assertTrue(verify_truetype_bytes(sanskrit_font.to_ttf())["valid"])
+
+        for script in ("kannada", "tamil", "telugu", "bengali", "multilingual"):
+            f = scribefont(None, script=script, family=f"Scribe_{script}")
+            self.assertTrue(f.invariants_passed)
+            self.assertGreaterEqual(len(f.glyphs), len(INDIC_SCRIPTS[script]))
+            self.assertTrue(verify_truetype_bytes(f.to_ttf())["valid"])
 
 
 if __name__ == "__main__":

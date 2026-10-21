@@ -1,6 +1,68 @@
 import { REAL_HANDWRITING_BANK } from './real_bank.js';
+import { INDIC_HANDWRITING_BANK } from './indic_bank.js';
 
 export const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+export const DEVANAGARI_CHARSET = 'अआइईउऊऋॠऌएऐओऔकखगघङचछजझञटठडढणतथदधनपफबभमयरलळवशषसहािीुूृॄेैोौंःँॅ़्ॐऽ।॥०१२३४५६७८९';
+export const KANNADA_CHARSET = 'ಅಆಇಈಉಊಋಎಏಐಒಓಔಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಲಳವಶಷಸಹಾಿೀುೂೃೆೇೈೊೋೌಂಃ್೦೧೨೩೪೫೬೭೮೯';
+export const TAMIL_CHARSET = 'அஆஇஈஉஊஎஏஐஒஓஔகஙசஞடணதநபமயரலவழளறனஸஹாிீுூெேைொோௌ்ஃ௦௧௨௩௪௫௬௭௮௯';
+export const TELUGU_CHARSET = 'అఆఇఈఉఊఋఎఏఐఒఓఔకఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరలళవశషసహాిీుూృెేైొోౌంః్౦౧౨౩౪౫౬౭౮౯';
+export const BENGALI_CHARSET = 'অআইঈউঊঋএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়়ািীুূৃেৈোৌংঃঁ্০১২৩৪৫৬৭৮৯';
+
+export const INDIC_SCRIPTS = {
+  latin: CHARSET + '!?.,-',
+  devanagari: DEVANAGARI_CHARSET,
+  sanskrit: DEVANAGARI_CHARSET,
+  hindi: DEVANAGARI_CHARSET,
+  kannada: KANNADA_CHARSET,
+  tamil: TAMIL_CHARSET,
+  telugu: TELUGU_CHARSET,
+  bengali: BENGALI_CHARSET,
+  multilingual:
+    CHARSET +
+    '!?.,-' +
+    DEVANAGARI_CHARSET +
+    KANNADA_CHARSET +
+    TAMIL_CHARSET +
+    TELUGU_CHARSET +
+    BENGALI_CHARSET,
+};
+
+export const SANSKRIT_SAMPLE_LINES = [
+  'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ अं अः',
+  'क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण',
+  'त थ द ध न प फ ब भ म य र ल व श ष स ह',
+  'ॐ भूर्भुवः स्वः सत्यमेव जयते ॥ १ ॥',
+  'योगः कर्मसु कौशलम् । वसुधैव कुटुम्बकम्',
+];
+
+export const DEVANAGARI_SAMPLE_LINES = [
+  'अ आ इ ई उ ऊ ऋ ए ऐ ओ औ',
+  'क ख ग घ च छ ज झ ट ठ ड ढ ण',
+  'त थ द ध न प फ ब भ म य र ल व श ष स ह',
+  'ा ि ी ु ू ृ े ै ो ौ ं ः ँ ् ०१२३४५६७८९',
+];
+
+export function reorderIndicVisualOrder(text) {
+  const chars = [...String(text)];
+  const PRE_BASE_MATRAS = new Set(['ि', 'ি', 'ে', 'ৈ', 'ெ', 'ே', 'ை']);
+  const VIRAMAS = new Set(['्', '্', '்']);
+  for (let i = 1; i < chars.length; i++) {
+    if (PRE_BASE_MATRAS.has(chars[i])) {
+      let baseIdx = i - 1;
+      if (baseIdx >= 1 && (chars[baseIdx] === '\u093C' || chars[baseIdx] === '\u09BC')) {
+        baseIdx -= 1;
+      }
+      while (baseIdx >= 2 && VIRAMAS.has(chars[baseIdx - 1])) {
+        baseIdx -= 2;
+      }
+      const matra = chars[i];
+      chars.splice(i, 1);
+      chars.splice(baseIdx, 0, matra);
+    }
+  }
+  return chars.join('');
+}
+
 const CHAR_TO_ID = Object.fromEntries([...CHARSET].map((c, i) => [c, i]));
 const DEFAULT_STYLE = [4.0, 58.0, 0.70, 1.00, 0.55, 2.0, 0.15, 0.25];
 export const SAMPLE_SHEET_LINES = [
@@ -260,6 +322,9 @@ export function contourToSvgPath(contourUpm, ch = 'A') {
   if (REAL_HANDWRITING_BANK[ch]) {
     return contoursToSvgD(REAL_HANDWRITING_BANK[ch].contours);
   }
+  if (INDIC_HANDWRITING_BANK[ch]) {
+    return contoursToSvgD(INDIC_HANDWRITING_BANK[ch].contours);
+  }
   if (!Array.isArray(contourUpm) || !contourUpm.length) return '';
   return contoursToSvgD([contourUpm]);
 }
@@ -303,7 +368,7 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
     }
   }
 
-  const [slantDeg, strokeW, xRatio, wScale, roundness, jitter, , flare] = style;
+  const [slantDeg, strokeW, xRatio, wScale, , jitter, , flare] = style;
   const slantTan = Math.tan(((slantDeg - 4.0) * Math.PI) / 180.0);
   const isLower = ch >= 'a' && ch <= 'z' && !'bdfhklt'.includes(ch);
   const yScale = isLower ? xRatio / 0.70 : 1.0;
@@ -312,13 +377,18 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
   const charHash = (((CHAR_TO_ID[ch] ?? ch.codePointAt(0)) * 131 + 17) % 100) / 100.0 - 0.5;
   const yJitterUpm = jitter * charHash * 1.4;
 
+  const indicEntry = INDIC_HANDWRITING_BANK[ch];
+  const isCombining = Boolean(indicEntry?.combining);
+  const cp = ch.codePointAt(0);
+  const isShirorekhaScript = (cp >= 0x0900 && cp <= 0x09FF) && !isCombining && !'ॐ।॥०१२३४५६७८९০১২৩৪৫৬৭৮৯'.includes(ch);
+
   let contours;
   let source;
   if (Array.isArray(tracedContours) && tracedContours.length > 0) {
     contours = tracedContours;
     source = 'traced_image';
   } else {
-    const bankEntry = REAL_HANDWRITING_BANK[ch] || REAL_HANDWRITING_BANK.A;
+    const bankEntry = REAL_HANDWRITING_BANK[ch] || indicEntry || REAL_HANDWRITING_BANK.A;
     const rawContours = bankEntry.contours;
     const allRaw = rawContours.flat();
     const cx = allRaw.reduce((s, p) => s + p[0], 0) / Math.max(1, allRaw.length);
@@ -327,7 +397,9 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
     contours = rawContours.map((loop, idxC) => {
       const radialSign = idxC === 0 ? 1.0 : -0.65;
       return loop.map(([px, py]) => {
-        let vy = py * yScale + yJitterUpm;
+        // Keep Shirorekha headline bar level while allowing natural body jitter
+        const jitterFactor = isShirorekhaScript && py > 540 ? 0.15 : 1.0;
+        let vy = py * yScale + yJitterUpm * jitterFactor;
         let vx = cx + (px - cx) * wScale + vy * slantTan * 0.42;
         const dx = vx - cx;
         const dy = vy - cy;
@@ -337,7 +409,7 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
         return [Math.round(vx), Math.round(vy)];
       });
     });
-    source = 'biometric_bank';
+    source = indicEntry ? 'indic_biometric_bank' : 'biometric_bank';
   }
 
   let allPts = contours.flat();
@@ -348,28 +420,40 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
   const ymin = Math.min(...ys);
   const ymax = Math.max(...ys);
 
-  if (xmin < 18) {
-    const shiftX = 24 - xmin;
-    contours = contours.map((loop) => loop.map(([px, py]) => [px + shiftX, py]));
-    xmin += shiftX;
-    xmax += shiftX;
+  let lsb;
+  let advanceWidth;
+  if (isCombining) {
+    lsb = Math.round(xmin);
+    advanceWidth = 0;
+  } else if (indicEntry) {
+    lsb = Math.round(xmin);
+    advanceWidth = Math.max(120, Math.round((indicEntry.advance_width || (xmax - xmin + 36)) * wScale));
+  } else {
+    if (xmin < 18) {
+      const shiftX = 24 - xmin;
+      contours = contours.map((loop) => loop.map(([px, py]) => [px + shiftX, py]));
+      xmin += shiftX;
+      xmax += shiftX;
+    }
+    lsb = Math.max(18, Math.round(xmin));
+    const bboxW = Math.max(80, xmax - xmin);
+    advanceWidth = Math.round(lsb + bboxW + Math.max(32, strokeW * 0.62));
   }
 
-  const lsb = Math.max(18, Math.round(xmin));
-  const bboxW = Math.max(80, xmax - xmin);
-  const advanceWidth = Math.round(lsb + bboxW + Math.max(32, strokeW * 0.62));
   const kernAv = Math.round(-45.0 * wScale - Math.abs(slantDeg) * 1.2 - flare * 12.0);
-  const verified = advanceWidth >= xmax - xmin + lsb;
+  const verified = (isCombining || indicEntry) ? contours.length > 0 : advanceWidth >= xmax - xmin + lsb;
 
   const contourUpm = resampleContour16(contours[0]);
   const contourNorm = contourUpm.map(([ux, uy]) => [
-    Number(Math.max(0.01, Math.min(0.99, ux / upm)).toFixed(5)),
-    Number(Math.max(0.01, Math.min(0.99, (uy + 220) / upm)).toFixed(5)),
+    Number(Math.max(0.01, Math.min(0.99, (ux + 350) / (upm + 350))).toFixed(5)),
+    Number(Math.max(0.01, Math.min(0.99, (uy + 260) / (upm + 260))).toFixed(5)),
   ]);
 
   return {
     char: ch,
-    codepoint: ch.codePointAt(0),
+    codepoint: cp,
+    combining: isCombining,
+    script: cp >= 0x0900 && cp <= 0x097f ? 'devanagari' : cp > 0x097f && cp <= 0x0d7f ? 'indic' : 'latin',
     is_missing: false,
     p_missing: pMissing,
     confidence: Number((1 - pMissing).toFixed(4)),
@@ -900,8 +984,8 @@ export function compileTrueTypeFont(glyphs, family = 'ScribeFont', upm = 1000) {
     const packed = packMultiContourGlyf(contours);
     glyfChunks.push(packed.bytes);
     locaOffsets.push(locaOffsets[locaOffsets.length - 1] + packed.bytes.length);
-    hmtxW.u16(Math.max(120, Math.round(g.advance_width || 600)));
-    hmtxW.i16(Math.round(g.lsb || 24));
+    hmtxW.u16(g.combining ? 0 : Math.max(120, Math.round(g.advance_width || 600)));
+    hmtxW.i16(Math.round(g.lsb ?? 24));
     allXmin = Math.min(allXmin, packed.bbox[0]);
     allYmin = Math.min(allYmin, packed.bbox[1]);
     allXmax = Math.max(allXmax, packed.bbox[2]);
@@ -1140,8 +1224,11 @@ export class ScribeFont {
       contrast: this.styleVector[6],
       serif_flare: this.styleVector[7],
     };
+    this.script = String(options.script || 'latin').toLowerCase();
     this.glyphs = {};
-    const charset = options.charset || (CHARSET + '!?.,-');
+    const defaultCharset = INDIC_SCRIPTS[this.script] || (CHARSET + '!?.,-');
+    const transcriptExtra = options.transcript ? Array.from(new Set(String(options.transcript).replace(/\s+/g, ''))).join('') : '';
+    const charset = Array.from(new Set((options.charset || defaultCharset) + transcriptExtra)).join('');
     for (const ch of charset) {
       this.glyphs[ch] = synthesizeGlyphFast(ch, this.styleVector, null, this.upm, tracedMap[ch] || null);
     }
@@ -1211,28 +1298,35 @@ export class ScribeFont {
 
   renderSVG(text, { size = 48 } = {}) {
     const scale = size / this.upm;
+    const visualText = reorderIndicVisualOrder(String(text));
+    const hasIndic = /[\u0900-\u0D7F]/.test(visualText);
+    const baselineY = hasIndic ? size * 0.90 : size * 0.78;
     let cursorX = 40;
     const paths = [];
     let prevCh = '';
-    for (const ch of String(text)) {
+    for (const ch of visualText) {
       if (ch === ' ') {
         cursorX += Math.round(this.upm * 0.34);
         prevCh = ' ';
         continue;
       }
       const g = this.glyph(ch);
-      if (prevCh && prevCh !== ' ') {
+      if (!g.combining && prevCh && prevCh !== ' ') {
         cursorX += this.kerning(prevCh, ch);
       }
+      let markOffsetX = 0;
+      if (g.combining && (ch === '\u0902' || ch === '\u0901') && '\u0947\u0948\u0940\u094B\u094C'.includes(prevCh)) {
+        markOffsetX = 95;
+      }
       paths.push(
-        `<g transform="translate(${(cursorX * scale).toFixed(2)}, ${(size * 0.78).toFixed(2)}) scale(${scale.toFixed(4)}, ${(-scale).toFixed(4)})">` +
+        `<g transform="translate(${((cursorX + markOffsetX) * scale).toFixed(2)}, ${baselineY.toFixed(2)}) scale(${scale.toFixed(4)}, ${(-scale).toFixed(4)})">` +
         `<path d="${g.svg_path}" fill="currentColor" fill-rule="evenodd" /></g>`
       );
       cursorX += g.advance_width;
       prevCh = ch;
     }
     const totalW = Math.max(120, Math.round(cursorX * scale + 30));
-    const totalH = Math.round(size * 1.28);
+    const totalH = Math.round(hasIndic ? size * 1.48 : size * 1.28);
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${totalH}" width="${totalW}" height="${totalH}">${paths.join('')}</svg>`;
   }
 }

@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import math
+import re
 import struct
 import time
 from pathlib import Path
 from typing import Any
 
+from .indic_bank import INDIC_HANDWRITING_BANK
 from .real_bank import REAL_HANDWRITING_BANK
 from .skeletons import (
     CHARSET,
@@ -24,6 +26,89 @@ SAMPLE_SHEET_LINES = [
     "nopqrstuvwxyz",
     "0123456789!?.",
 ]
+
+DEVANAGARI_CHARSET = (
+    "अआइईउऊऋॠऌएऐओऔ"
+    "कखगघङचछजझञटठडढणतथदधनपफबभमयरलळवशषसह"
+    "ािीुूृॄेैोौ्ंँः़ऽ।॥ॐ"
+    "०१२३४५६७८९"
+)
+
+KANNADA_CHARSET = (
+    "ಅಆಇಈಉಊಋಎಏಐಒಓಔ"
+    "ಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಲಳವಶಷಸಹ"
+    "ಾಿೀುೂೃೆೇೈೊೋೌ್ಂಃ"
+    "೦೧೨೩೪೫೬೭೮೯"
+)
+
+TAMIL_CHARSET = (
+    "அஆஇஈஉஊஎஏஐஒஓஔஃ"
+    "கஙசஜஞடணதநனபமயரறலளழவஶஷஸஹ"
+    "ாிீுூெேைொோௌ்"
+    "௦௧௨௩௪௫௬௭௮௯"
+)
+
+TELUGU_CHARSET = (
+    "అఆఇఈఉఊఋఎఏఐఒఓఔ"
+    "కఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరలళవశషసహ"
+    "ాిీుూృెేైొోౌ్ంః"
+    "౦౧౨౩౪౫౬౭౮౯"
+)
+
+BENGALI_CHARSET = (
+    "অআইঈউঊঋএঐওঔ"
+    "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়়"
+    "ািীুূৃেৈোৌ্ংঃঁ"
+    "০১২৩৪৫৬৭৮৯"
+)
+
+INDIC_SCRIPTS: dict[str, str] = {
+    "latin": CHARSET + "!?.,-",
+    "devanagari": DEVANAGARI_CHARSET,
+    "sanskrit": DEVANAGARI_CHARSET,
+    "hindi": DEVANAGARI_CHARSET,
+    "kannada": KANNADA_CHARSET,
+    "tamil": TAMIL_CHARSET,
+    "telugu": TELUGU_CHARSET,
+    "bengali": BENGALI_CHARSET,
+    "multilingual": (
+        CHARSET
+        + "!?.,-"
+        + DEVANAGARI_CHARSET
+        + KANNADA_CHARSET
+        + TAMIL_CHARSET
+        + TELUGU_CHARSET
+        + BENGALI_CHARSET
+    ),
+}
+
+SANSKRIT_SAMPLE_LINES = [
+    "अआइईउऊऋएऐओऔअंअः",
+    "कखगघङचछजझञटठडढण",
+    "तथदधनपफबभमयरलवशषसह",
+    "ािीुूृेैोौ्ंँःऽ।॥ॐ",
+    "०१२३४५६७८९ सत्यमेव जयते",
+]
+
+DEVANAGARI_SAMPLE_LINES = SANSKRIT_SAMPLE_LINES
+
+_PREBASE_MATRAS = {"ि", "ি", "ে", "ৈ", "ெ", "ே", "ை"}
+_VIRAMAS = {"्", "্", "்"}
+
+
+def reorder_indic_visual_order(text: str) -> str:
+    """Reorder logical Unicode Devanagari/Bengali/Tamil pre-base matras before their consonant cluster for visual layout."""
+    chars = list(str(text))
+    for i in range(1, len(chars)):
+        if chars[i] in _PREBASE_MATRAS:
+            base_idx = i - 1
+            if base_idx >= 1 and chars[base_idx] in ("\u093C", "\u09BC"):
+                base_idx -= 1
+            while base_idx >= 2 and chars[base_idx - 1] in _VIRAMAS:
+                base_idx -= 2
+            matra = chars.pop(i)
+            chars.insert(base_idx, matra)
+    return "".join(chars)
 
 WIKIMEDIA_SCHOOL_LINES = [
     "AaĄąBbCcČčDd",
@@ -226,6 +311,8 @@ def contour_to_svg_path(contour_upm: list[list[int]], ch: str = "A") -> str:
     """Convert either a multi-contour handwritten glyph or a 16-pt contour into an SVG path."""
     if ch in REAL_HANDWRITING_BANK:
         return contours_to_svg_d(REAL_HANDWRITING_BANK[ch]["contours"])
+    if ch in INDIC_HANDWRITING_BANK:
+        return contours_to_svg_d(INDIC_HANDWRITING_BANK[ch]["contours"])
     if not contour_upm:
         return ""
     return contours_to_svg_d([contour_upm])
@@ -245,7 +332,7 @@ def synthesize_glyph_fast(
     upm: int = 1000,
     traced_contours: list[list[list[int]]] | None = None,
 ) -> dict[str, Any]:
-    """Synthesize a real multi-contour handwritten glyph from traced contours or biometric transformation of REAL_HANDWRITING_BANK."""
+    """Synthesize a real multi-contour handwritten glyph from traced contours or biometric transformation of REAL_HANDWRITING_BANK / INDIC_HANDWRITING_BANK."""
     p_missing = 0.0004
     if target_patch and len(target_patch) > 0:
         max_ink = max(target_patch)
@@ -264,6 +351,7 @@ def synthesize_glyph_fast(
                 "bbox": [0, 0, 0, 0],
                 "lsb": 0,
                 "advance_width": 0,
+                "combining": False,
                 "stroke_width": 0.0,
                 "slant_deg": 0.0,
                 "kern_av": 0,
@@ -282,11 +370,15 @@ def synthesize_glyph_fast(
     char_hash = ((CHAR_TO_ID.get(ch, ord(ch)) * 131 + 17) % 100) / 100.0 - 0.5
     y_jitter_upm = jitter * char_hash * 1.4
 
+    indic_entry = INDIC_HANDWRITING_BANK.get(ch)
+    is_combining = bool(indic_entry and indic_entry.get("combining"))
+    is_devanagari = 0x0900 <= ord(ch) <= 0x097F
+
     if traced_contours and len(traced_contours) > 0:
         contours = traced_contours
         source = "traced_image"
     else:
-        bank_entry = REAL_HANDWRITING_BANK.get(ch) or REAL_HANDWRITING_BANK["A"]
+        bank_entry = REAL_HANDWRITING_BANK.get(ch) or indic_entry or REAL_HANDWRITING_BANK["A"]
         raw_contours = bank_entry["contours"]
         all_raw = [pt for c in raw_contours for pt in c]
         cx = sum(p[0] for p in all_raw) / max(1, len(all_raw))
@@ -297,7 +389,8 @@ def synthesize_glyph_fast(
             # Outer contour (idx_c == 0) expands with heavier stroke weight; inner counter shrinks slightly
             radial_sign = 1.0 if idx_c == 0 else -0.65
             for px, py in loop:
-                vy = py * y_scale + y_jitter_upm
+                row_jitter = y_jitter_upm * (0.15 if (is_devanagari and py > 540) else 1.0)
+                vy = py * y_scale + row_jitter
                 vx = cx + (px - cx) * w_scale + vy * slant_tan * 0.42
                 dx = vx - cx
                 dy = vy - cy
@@ -306,7 +399,7 @@ def synthesize_glyph_fast(
                 vy += (dy / dist) * weight_delta * radial_sign * 0.65
                 transformed_loop.append([int(round(vx)), int(round(vy))])
             contours.append(transformed_loop)
-        source = "biometric_bank"
+        source = "indic_biometric_bank" if indic_entry else "biometric_bank"
 
     all_pts = [pt for c in contours for pt in c]
     xs = [p[0] for p in all_pts]
@@ -314,18 +407,29 @@ def synthesize_glyph_fast(
     xmin, xmax = min(xs), max(xs)
     ymin, ymax = min(ys), max(ys)
 
-    # Shift glyph horizontally if xmin < 18 so left sidebearing is always positive & clean
-    if xmin < 18:
-        shift_x = 24 - xmin
-        contours = [[[p[0] + shift_x, p[1]] for p in loop] for loop in contours]
-        xmin += shift_x
-        xmax += shift_x
+    if is_combining:
+        lsb = int(xmin)
+        advance_width = 0
+        kern_av = 0
+        verified = len(contours) > 0
+    elif indic_entry:
+        lsb = int(xmin)
+        advance_width = max(120, int(round(indic_entry.get("advance_width", (xmax - xmin) + 36) * w_scale)))
+        kern_av = int(round(-45.0 * w_scale - abs(slant_deg) * 1.2 - flare * 12.0))
+        verified = len(contours) > 0
+    else:
+        # Shift glyph horizontally if xmin < 18 so left sidebearing is always positive & clean
+        if xmin < 18:
+            shift_x = 24 - xmin
+            contours = [[[p[0] + shift_x, p[1]] for p in loop] for loop in contours]
+            xmin += shift_x
+            xmax += shift_x
 
-    lsb = max(18, int(xmin))
-    bbox_w = max(80, xmax - xmin)
-    advance_width = int(round(lsb + bbox_w + max(32.0, stroke_w * 0.62)))
-    kern_av = int(round(-45.0 * w_scale - abs(slant_deg) * 1.2 - flare * 12.0))
-    verified = advance_width >= (xmax - xmin) + lsb
+        lsb = max(18, int(xmin))
+        bbox_w = max(80, xmax - xmin)
+        advance_width = int(round(lsb + bbox_w + max(32.0, stroke_w * 0.62)))
+        kern_av = int(round(-45.0 * w_scale - abs(slant_deg) * 1.2 - flare * 12.0))
+        verified = advance_width >= (xmax - xmin) + lsb
 
     contour_upm = _resample_contour_16(contours[0])
     contour_norm = [
@@ -345,6 +449,7 @@ def synthesize_glyph_fast(
         "bbox": [xmin, ymin, xmax, ymax],
         "lsb": lsb,
         "advance_width": advance_width,
+        "combining": is_combining,
         "stroke_width": round(stroke_w, 2),
         "slant_deg": round(slant_deg, 2),
         "kern_av": kern_av,
@@ -804,7 +909,7 @@ def compile_truetype_font(
         raw_g, (xmin, ymin, xmax, ymax), n_pts, n_cont = _pack_multi_contour_glyf(contours)
         glyf_chunks.append(raw_g)
         loca_offsets.append(loca_offsets[-1] + len(raw_g))
-        adv = max(120, int(g.get("advance_width", 600)))
+        adv = 0 if g.get("combining") else max(120, int(g.get("advance_width", 600)))
         lsb = int(g.get("lsb", 24))
         hmtx_entries.append(struct.pack(">Hh", adv, lsb))
         all_xmin = min(all_xmin, xmin)
@@ -1027,8 +1132,11 @@ class ScribeFont:
             "serif_flare": self.style_vector[7],
         }
 
+        self.script: str = str(opts.get("script", "latin")).lower()
         self.glyphs: dict[str, dict[str, Any]] = {}
-        charset = opts.get("charset", CHARSET + "!?.,-")
+        default_charset = INDIC_SCRIPTS.get(self.script, CHARSET + "!?.,-")
+        transcript_extra = "".join(dict.fromkeys(str(opts.get("transcript") or "").replace(" ", "").replace("\n", "")))
+        charset = "".join(dict.fromkeys(str(opts.get("charset", default_charset)) + transcript_extra))
         for ch in charset:
             self.glyphs[ch] = synthesize_glyph_fast(
                 ch,
@@ -1105,25 +1213,31 @@ class ScribeFont:
 
     def render_svg(self, text: str, size: int = 48) -> str:
         scale = size / float(self.upm)
+        visual_text = reorder_indic_visual_order(str(text))
+        has_indic = any(0x0900 <= ord(c) <= 0x0D7F for c in visual_text)
+        baseline_y = size * 0.90 if has_indic else size * 0.78
         cursor_x = 40
         paths: list[str] = []
         prev_ch = ""
-        for ch in text:
+        for ch in visual_text:
             if ch == " ":
                 cursor_x += int(self.upm * 0.34)
                 prev_ch = " "
                 continue
             g = self.glyph(ch)
-            if prev_ch and prev_ch != " ":
+            if not g.get("combining") and prev_ch and prev_ch != " ":
                 cursor_x += self.kerning(prev_ch, ch)
+            mark_offset_x = 0
+            if g.get("combining") and ch in ("\u0902", "\u0901") and prev_ch in "\u0947\u0948\u0940\u094B\u094C":
+                mark_offset_x = 95
             paths.append(
-                f'<g transform="translate({cursor_x * scale:.2f}, {size * 0.78:.2f}) scale({scale:.4f}, {-scale:.4f})">'
+                f'<g transform="translate({(cursor_x + mark_offset_x) * scale:.2f}, {baseline_y:.2f}) scale({scale:.4f}, {-scale:.4f})">'
                 f'<path d="{g["svg_path"]}" fill="currentColor" fill-rule="evenodd" /></g>'
             )
             cursor_x += g["advance_width"]
             prev_ch = ch
         total_w = max(120, int(cursor_x * scale + 30))
-        total_h = int(size * 1.28)
+        total_h = int(size * 1.48) if has_indic else int(size * 1.28)
         return (
             f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w} {total_h}" '
             f'width="{total_w}" height="{total_h}">' + "".join(paths) + "</svg>"

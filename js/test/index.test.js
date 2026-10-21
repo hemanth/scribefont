@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import scribefont, { verifyTrueTypeBytes, synthesizeGlyphFast } from '../src/index.js';
+import scribefont, {
+  verifyTrueTypeBytes,
+  synthesizeGlyphFast,
+  reorderIndicVisualOrder,
+  DEVANAGARI_CHARSET,
+  INDIC_SCRIPTS,
+} from '../src/index.js';
 
 test('scribefont synthesizes 62 multi-contour handwritten glyphs, optical kerning, SVG, and valid binary .ttf', () => {
   const font = scribefont(
@@ -95,4 +101,52 @@ test('synthesizeGlyphFast abstains with calibrated p_missing on blank/smudge cel
   assert.equal(res.is_missing, true);
   assert.ok(res.p_missing > 0.99);
   assert.equal(res.value, null);
+});
+
+test('scribefont supports Sanskrit, Devanagari, Kannada, Tamil, Telugu, and Bengali handwritten glyphs and .ttf export', () => {
+  const sanskritFont = scribefont({ style: [6.0, 62.0, 0.72, 1.02, 0.65, 2.0, 0.2, 0.25] }, {
+    family: 'ScribeSanskrit',
+    script: 'sanskrit',
+  });
+  assert.equal(sanskritFont.script, 'sanskrit');
+  assert.equal(sanskritFont.invariants_passed, true);
+  assert.ok(Object.keys(sanskritFont.glyphs).length >= DEVANAGARI_CHARSET.length);
+
+  // Verify Sanskrit Om (ॐ), Avagraha (ऽ), Danda (।), Double Danda (॥), and Ka (क)
+  for (const ch of ['ॐ', 'ऽ', '।', '॥', 'क', 'अ', 'ऋ', '९']) {
+    const g = sanskritFont.glyph(ch);
+    assert.equal(g.is_missing, false);
+    assert.equal(g.source, 'indic_biometric_bank');
+    assert.ok(g.contours.length >= 1);
+    assert.ok(g.advance_width > 150);
+  }
+
+  // Verify zero-advance combining vowel marks & virama
+  for (const mark of ['े', 'ै', 'ु', 'ू', 'ृ', '्', 'ं', 'ँ']) {
+    const gm = sanskritFont.glyph(mark);
+    assert.equal(gm.combining, true);
+    assert.equal(gm.advance_width, 0);
+    assert.ok(gm.lsb < 0);
+  }
+
+  // Verify pre-base short-i matra ('ि') logical-to-visual reordering
+  assert.equal(reorderIndicVisualOrder('कि'), 'िक');
+  assert.equal(reorderIndicVisualOrder('प्रि'), 'िप्र');
+
+  const svg = sanskritFont.renderSVG('सत्यमेव जयते ॥ वसुधैव कुटुम्बकम् ॐ', { size: 52 });
+  assert.ok(svg.includes('<svg'));
+  assert.ok(svg.includes('<path'));
+
+  const ttf = sanskritFont.toTTF();
+  const check = verifyTrueTypeBytes(ttf);
+  assert.equal(check.valid, true);
+  assert.equal(check.checksum_ok, true);
+
+  // Verify Kannada, Tamil, Telugu, and Bengali scripts compile valid .ttf fonts
+  for (const script of ['kannada', 'tamil', 'telugu', 'bengali', 'multilingual']) {
+    const f = scribefont(null, { script, family: `Scribe_${script}` });
+    assert.equal(f.invariants_passed, true);
+    assert.ok(Object.keys(f.glyphs).length >= INDIC_SCRIPTS[script].length);
+    assert.equal(verifyTrueTypeBytes(f.toTTF()).valid, true);
+  }
 });

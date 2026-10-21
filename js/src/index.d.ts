@@ -28,11 +28,34 @@ export interface ScribeGlyph {
   value: string | null;
 }
 
+export type ScribeScript =
+  | 'latin'
+  | 'devanagari'
+  | 'sanskrit'
+  | 'hindi'
+  | 'kannada'
+  | 'tamil'
+  | 'telugu'
+  | 'bengali'
+  | 'multilingual';
+
 export interface ScribeFontOptions {
   family?: string;
   upm?: number;
   charset?: string;
+  script?: ScribeScript;
+  transcript?: string;
 }
+
+export declare const DEVANAGARI_CHARSET: string;
+export declare const KANNADA_CHARSET: string;
+export declare const TAMIL_CHARSET: string;
+export declare const TELUGU_CHARSET: string;
+export declare const BENGALI_CHARSET: string;
+export declare const INDIC_SCRIPTS: Record<string, string>;
+export declare const SANSKRIT_SAMPLE_LINES: string[];
+export declare const DEVANAGARI_SAMPLE_LINES: string[];
+export declare function reorderIndicVisualOrder(text: string): string;
 
 export declare class ScribeFont {
   family: string;

@@ -53,6 +53,20 @@ assert verify_truetype_bytes(ttf_bytes)["valid"] is True
 
 `glyph(ch)` inspects per-character bounding boxes, `advance_width`, `lsb`, quadratic SVG path commands, and calibrated `p_missing` abstention probabilities. `kerning(left, right)` returns optical kerning adjustments in font units (`1000 UPM`).
 
+## Sanskrit, Devanagari & Indic Script Support (`U+0900..U+0D7F`)
+
+Pass `script` (`'sanskrit' | 'devanagari' | 'hindi' | 'kannada' | 'tamil' | 'telugu' | 'bengali' | 'multilingual'`) to synthesize 348+ multi-contour Indic handwritten glyphs — including Vedic/Sanskrit symbols (`ॐ ऽ । ॥`), vowels (`अ–औ ऋ ॠ ऌ`), consonants (`क–ह ळ`), zero-advance combining vowel matras & virama (`े ै ु ू ृ ् ं ँ`), pre-base matra visual reordering (`ि ি ে ৈ ெ ே ை`), and level Shirorekha headline bars:
+
+```js
+const sanskritFont = scribefont(
+  { style: { slant_deg: 6.0, stroke_width: 60 } },
+  { family: 'ScribeSanskrit', script: 'sanskrit' }
+);
+
+const svg = sanskritFont.renderSVG('सत्यमेव जयते ॥ वसुधैव कुटुम्बकम् ॐ');
+const ttf = sanskritFont.toTTF();
+```
+
 ## 3-Tier Empirical Benchmark (`B=1,000` Bootstrap 95% CIs)
 
 | Runtime Tier | Artifact | Suite A: Wild Few-Shot ($N=60$) | Suite B: 62-Glyph `.TTF` ($N=62$) | Contour MAE | Abstention AUROC | Latency `p50` |

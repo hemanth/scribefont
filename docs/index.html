@@ -563,6 +563,7 @@
             <button class="chip-btn" id="chip3" onclick="loadSampleSheet('./samples/internet/internet-school-alphabet.jpg', 3)">4. 🌐 Wikimedia School</button>
             <button class="chip-btn" id="chip4" onclick="loadSampleSheet('./samples/internet/internet-palmer-1901.jpg', 4)">5. 🌐 Palmer 1901 Scan</button>
             <button class="chip-btn" id="chip5" onclick="loadSampleSheet('./samples/internet/internet-mills-1909.jpg', 5)">6. 🌐 E.C. Mills 1909</button>
+            <button class="chip-btn" id="chip7" onclick="loadSampleSheet('./samples/sample-sanskrit-devanagari.png', 7, 'sanskrit')" style="grid-column: span 2; background: var(--peach); font-weight: 700;">7. 🕉 Sanskrit / Devanagari Handwritten Sheet (अ–ह, ॐ, ०–९)</button>
           </div>
 
           <canvas id="scanCanvas" width="460" height="210"></canvas>
@@ -616,6 +617,20 @@
         <div class="panel-title">
           <span>2. Live Compiled OpenType (.ttf) Specimen &amp; Multi-Contour Glyph Sheet</span>
           <span id="ttfStatus" style="font-family:var(--font-mono);font-size:11px;background:var(--sage);padding:2px 8px;border-radius:5px;">SFNT 0xB1B0AFBA VERIFIED</span>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+          <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;white-space:nowrap;">SCRIPT / LANGUAGE:</span>
+          <select id="scriptSelect" onchange="setScript(this.value)" style="flex:1;margin-bottom:0;">
+            <option value="latin">Latin / English (A–Z, a–z, 0–9)</option>
+            <option value="sanskrit">Sanskrit — संस्कृतम् (Devanagari + Vedic ॐ ऽ । ॥)</option>
+            <option value="hindi">Hindi / Marathi / Nepali — देवनागरी (Devanagari)</option>
+            <option value="kannada">Kannada — ಕನ್ನಡ (ಅ–ಹ, ೦–೯)</option>
+            <option value="tamil">Tamil — தமிழ் (அ–ஹ, ௦–௯)</option>
+            <option value="telugu">Telugu — తెలుగు (అ–హ, ౦–౯)</option>
+            <option value="bengali">Bengali — বাংলা (অ–হ, ০–৯)</option>
+            <option value="multilingual">Multilingual — All Indic + Latin (409 Glyphs)</option>
+          </select>
         </div>
 
         <input type="text" id="specimenInput" value="The quick brown fox jumps over 2026!" oninput="renderSpecimen()" />
@@ -720,28 +735,60 @@
   <script type="module">
     import scribefont, {
       CHARSET,
+      INDIC_SCRIPTS,
       verifyTrueTypeBytes,
     } from './src/index.js';
 
     let activeTier = 'tier2';
+    let activeScript = 'latin';
     let ortSession = null;
     let currentImageElement = null;
     let currentFont = null;
     let currentTtfBytes = null;
     let canvasStrokes = [];
 
-    async function loadSampleSheet(url, chipIdx = 0) {
-      for (let i = 0; i <= 6; i++) {
+    const SCRIPT_SPECIMENS = {
+      latin: 'The quick brown fox jumps over 2026!',
+      sanskrit: 'सत्यमेव जयते ॥ वसुधैव कुटुम्बकम् ॐ',
+      hindi: 'नमस्ते भारत । सत्यमेव जयते २०२६',
+      kannada: 'ಸತ್ಯಮೇವ ಜಯತೇ ಕನ್ನಡ ೨೦೨೬',
+      tamil: 'வாய்மையே வெல்லும் தமிழ் ௨௦௨௬',
+      telugu: 'సత్యమేవ జయతే తెలుగు ౨౦౨౬',
+      bengali: 'সত্যমেব জয়তে বাংলা ২০২৬',
+      multilingual: 'सत्यमेव जयते ॐ ಕನ್ನಡ தமிழ் తెలుగు বাংলা 2026',
+    };
+
+    const SANSKRIT_CHART_TRANSCRIPT = [
+      'अआइईउऊऋॠऌएऐओऔ',
+      'कखगघङचछजझञटठड',
+      'ढणतथदधनपफबभमय',
+      'रलळवशषसहॐऽ।॥०',
+      '१२३४५६७८९ािीो',
+    ].join('\n');
+
+    async function loadSampleSheet(url, chipIdx = 0, scriptOverride = null) {
+      for (let i = 0; i <= 7; i++) {
         const el = document.getElementById(`chip${i}`);
         if (el) el.classList.toggle('active', i === chipIdx);
+      }
+      if (scriptOverride) {
+        activeScript = scriptOverride;
+        document.getElementById('scriptSelect').value = scriptOverride;
+        document.getElementById('specimenInput').value = SCRIPT_SPECIMENS[scriptOverride] || SCRIPT_SPECIMENS.latin;
       }
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         currentImageElement = img;
-        processLoadedImage(img, true);
+        processLoadedImage(img, true, chipIdx === 7 ? SANSKRIT_CHART_TRANSCRIPT : null);
       };
       img.src = url;
+    }
+
+    function setScript(scriptName) {
+      activeScript = scriptName || 'latin';
+      document.getElementById('specimenInput').value = SCRIPT_SPECIMENS[activeScript] || SCRIPT_SPECIMENS.latin;
+      updateFromSliders();
     }
 
     function handleFileUpload(ev) {
@@ -763,7 +810,7 @@
       reader.readAsDataURL(file);
     }
 
-    function processLoadedImage(img, syncSlidersFromImage = true) {
+    function processLoadedImage(img, syncSlidersFromImage = true, customTranscript = null) {
       const t0 = performance.now();
       const offCanvas = document.createElement('canvas');
       offCanvas.width = img.naturalWidth || img.width;
@@ -774,6 +821,8 @@
 
       currentFont = scribefont.fromImage(imgData, {
         family: 'ScribeLiveHand',
+        script: activeScript,
+        ...(customTranscript ? { transcript: customTranscript } : {}),
       });
 
       if (syncSlidersFromImage) {
@@ -926,7 +975,7 @@
         0.22,
         0.24,
       ];
-      currentFont = scribefont({ style: styleVec }, { family: 'ScribeLiveHand' });
+      currentFont = scribefont({ style: styleVec }, { family: 'ScribeLiveHand', script: activeScript });
       const elapsed = performance.now() - t0;
       compileAndRenderFont(elapsed);
     }
@@ -935,9 +984,10 @@
       if (!currentFont) return;
       currentTtfBytes = currentFont.toTTF();
       const check = verifyTrueTypeBytes(currentTtfBytes);
+      const totalGlyphCount = Object.keys(currentFont.glyphs).length;
 
       document.getElementById('statTraced').textContent =
-        currentFont.traced_count > 0 ? `${currentFont.traced_count} traced` : `62 biometric`;
+        currentFont.traced_count > 0 ? `${currentFont.traced_count} traced` : `${totalGlyphCount} biometric`;
       document.getElementById('statBytes').textContent = `${currentTtfBytes.byteLength.toLocaleString()} B`;
       document.getElementById('statKern').textContent = `${currentFont.glyph('A').kern_av} UPM`;
       document.getElementById('statLat').textContent = `${elapsedMs.toFixed(1)} ms`;
@@ -962,30 +1012,32 @@
 
     function renderSpecimen() {
       if (!currentFont) return;
-      const text = document.getElementById('specimenInput').value || 'The quick brown fox jumps over 2026!';
+      const text = document.getElementById('specimenInput').value || SCRIPT_SPECIMENS[activeScript] || 'The quick brown fox jumps over 2026!';
       document.getElementById('specimenSvgBox').innerHTML = currentFont.renderSVG(text, { size: 56 });
       const svgEl = document.querySelector('#specimenSvgBox svg');
       if (svgEl) {
         svgEl.style.width = '100%';
         svgEl.style.height = 'auto';
-        svgEl.style.maxHeight = '76px';
+        svgEl.style.maxHeight = '84px';
       }
     }
 
     function renderGlyphGrid() {
       if (!currentFont) return;
       const grid = document.getElementById('glyphGrid');
-      const chars = [...CHARSET, '!', '?', '.'];
+      const activeCharset = INDIC_SCRIPTS[activeScript] || (CHARSET + '!?.');
+      const chars = [...activeCharset];
       grid.innerHTML = chars
         .filter((ch) => currentFont.glyphs[ch])
         .map((ch) => {
           const g = currentFont.glyph(ch);
           const nContours = g.contours ? g.contours.length : 1;
           const badge = g.source === 'traced_image' ? `<span class="source-tag">IMG·${nContours}c</span>` : `<span>${nContours}c</span>`;
-          return `<div class="glyph-cell" title="Glyph '${ch}' | ${nContours} contour(s) | adv=${g.advance_width} UPM | source=${g.source}">
+          const tx = g.combining ? 340 : 25;
+          return `<div class="glyph-cell" title="Glyph '${ch}' (U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}) | ${nContours} contour(s) | adv=${g.advance_width} UPM | source=${g.source}">
             <div class="glyph-char"><strong>${ch}</strong>${badge}</div>
             <svg viewBox="0 0 650 850" width="46" height="50">
-              <g transform="translate(25, 660) scale(0.76, -0.76)">
+              <g transform="translate(${tx}, 660) scale(0.72, -0.72)">
                 <path d="${g.svg_path}" fill="#141416" fill-rule="evenodd" />
               </g>
             </svg>
@@ -1046,6 +1098,7 @@
     }
 
     window.setTier = setTier;
+    window.setScript = setScript;
     window.loadSampleSheet = loadSampleSheet;
     window.handleFileUpload = handleFileUpload;
     window.traceFromWebCanvas = traceFromWebCanvas;
