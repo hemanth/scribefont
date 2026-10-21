@@ -380,11 +380,14 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
   const indicEntry = INDIC_HANDWRITING_BANK[ch];
   const isCombining = Boolean(indicEntry?.combining);
   const cp = ch.codePointAt(0);
+  const isIndicMatraOrMark =
+    isCombining ||
+    /[\u0900-\u0903\u093A-\u094F\u0951-\u0957\u0962\u0963\u0981-\u0983\u09BC-\u09CD\u0B82\u0BBE-\u0BCD\u0C01-\u0C03\u0C3E-\u0C4D\u0C82\u0C83\u0CBE-\u0CCD]/.test(ch);
   const isShirorekhaScript = (cp >= 0x0900 && cp <= 0x09FF) && !isCombining && !'ॐ।॥०१२३४५६७८९০১২৩৪৫৬৭৮৯'.includes(ch);
 
   let contours;
   let source;
-  if (Array.isArray(tracedContours) && tracedContours.length > 0) {
+  if (Array.isArray(tracedContours) && tracedContours.length > 0 && !isIndicMatraOrMark) {
     contours = tracedContours;
     source = 'traced_image';
   } else {
@@ -425,6 +428,9 @@ export function synthesizeGlyphFast(ch, style = DEFAULT_STYLE, targetPatch = nul
   if (isCombining) {
     lsb = Math.round(xmin);
     advanceWidth = 0;
+  } else if (indicEntry && source === 'traced_image') {
+    lsb = Math.max(6, Math.round(xmin));
+    advanceWidth = Math.max(140, Math.round(xmax - xmin + 18));
   } else if (indicEntry) {
     lsb = Math.round(xmin);
     advanceWidth = Math.max(120, Math.round((indicEntry.advance_width || (xmax - xmin + 36)) * wScale));

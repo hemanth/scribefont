@@ -250,6 +250,55 @@
       background: #fff;
       margin-bottom: 8px;
     }
+    .script-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f5f2e8;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 7px 10px;
+      margin-bottom: 12px;
+      box-shadow: 2px 2px 0 var(--border);
+    }
+    .script-label-badge {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      background: var(--ink);
+      color: #fff;
+      padding: 5px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .styled-select {
+      flex: 1;
+      margin-bottom: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: #ffffff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23141416' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 11px center;
+      background-size: 14px;
+      padding: 7px 34px 7px 11px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background-color 0.12s ease, transform 0.08s ease;
+    }
+    .styled-select:hover {
+      background-color: var(--butter);
+    }
+    .styled-select:focus {
+      outline: 2px solid var(--indigo);
+      outline-offset: 1px;
+    }
     .slider-row {
       margin-bottom: 7px;
     }
@@ -528,6 +577,20 @@
           <button class="tier-btn" id="btnTier1B" onclick="setTier('tier1b')">Tier 1B: WASM ONNX Int8</button>
         </div>
 
+        <div class="script-bar">
+          <span class="script-label-badge">SCRIPT / LANGUAGE</span>
+          <select id="scriptSelectLeft" class="styled-select" onchange="setScript(this.value)">
+            <option value="latin">Latin / English (A–Z, a–z, 0–9)</option>
+            <option value="sanskrit">Sanskrit — संस्कृतम् (Devanagari + Vedic ॐ ऽ । ॥)</option>
+            <option value="hindi">Hindi / Marathi / Nepali — देवनागरी (Devanagari)</option>
+            <option value="kannada">Kannada — ಕನ್ನಡ (ಅ–ಹ, ೦–೯)</option>
+            <option value="tamil">Tamil — தமிழ் (அ–ஹ, ௦–௯)</option>
+            <option value="telugu">Telugu — తెలుగు (అ–హ, ౦–౯)</option>
+            <option value="bengali">Bengali — বাংলা (অ–হ, ০–৯)</option>
+            <option value="multilingual">Multilingual — All Indic + Latin (415 Glyphs)</option>
+          </select>
+        </div>
+
         <!-- Mode A: Supplied Handwriting Image, Printable Template Chart & Real Internet Specimens -->
         <div class="sub-box">
           <div class="box-head">
@@ -541,30 +604,22 @@
           <!-- Printable 5x13 Template Chart Bar -->
           <div style="background:#f3f0e6;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:9px;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
-              <span style="font-size:11px;font-weight:800;">🖨 Printable 5×13 Handwriting Chart (65 Glyphs)</span>
+              <span id="chartTitleText" style="font-size:11px;font-weight:800;">🖨 Printable 5×13 Handwriting Chart (65 Glyphs)</span>
               <span style="font-family:var(--font-mono);font-size:9.5px;background:var(--sage);padding:1px 6px;border-radius:4px;font-weight:700;">DROP-OUT GUIDES</span>
             </div>
             <div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.35;">
-              1. Print or download the chart &rarr; 2. Write <code>A–Z a–z 0–9 !?</code> in dark pen &rarr; 3. Upload photo/scan above. Light cyan/gray guide boxes drop out automatically.
+              1. Print or download the chart &rarr; 2. Write <code id="chartRangeCode">A–Z a–z 0–9 !?</code> in dark pen &rarr; 3. Upload photo/scan above. Light cyan/gray guide boxes drop out automatically.
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button type="button" onclick="printTemplateChart()" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:var(--ink);color:#fff;cursor:pointer;">🖨 Print Blank Chart</button>
-              <a href="./samples/scribefont-template-chart.png" download="scribefont-5x13-template-chart.png" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ PNG Chart</a>
-              <a href="./samples/scribefont-template-chart.svg" download="scribefont-5x13-template-chart.svg" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ Vector SVG</a>
-              <button type="button" class="chip-btn" id="chip6" onclick="loadSampleSheet('./samples/sample-filled-template.png', 6)" style="background:var(--butter);font-weight:700;flex:1;text-align:center;">✨ Demo: Filled Chart</button>
+              <a id="downloadChartPng" href="./samples/scribefont-template-chart.png" download="scribefont-5x13-template-chart.png" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ PNG Chart</a>
+              <a id="downloadChartSvg" href="./samples/scribefont-template-chart.svg" download="scribefont-5x13-template-chart.svg" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ Vector SVG</a>
+              <button type="button" class="chip-btn" id="btnDemoFilledChart" onclick="loadScriptSample(0)" style="background:var(--butter);font-weight:700;flex:1;text-align:center;">✨ Demo: Filled Chart</button>
             </div>
           </div>
 
-          <div style="font-family:var(--font-mono);font-size:9.5px;color:var(--muted);margin-bottom:4px;">FILLED TEMPLATE, STUDIO SHEETS &amp; REAL WIKIMEDIA COMMONS SCANS:</div>
-          <div class="sample-chips">
-            <button class="chip-btn active" id="chip0" onclick="loadSampleSheet('./samples/sample-filled-template.png', 0)">1. 🖨 Filled Template (65g)</button>
-            <button class="chip-btn" id="chip1" onclick="loadSampleSheet('./samples/sample-architect.png', 1)">2. Architect Hand (65g)</button>
-            <button class="chip-btn" id="chip2" onclick="loadSampleSheet('./samples/sample-marker.png', 2)">3. Felt Marker (65g)</button>
-            <button class="chip-btn" id="chip3" onclick="loadSampleSheet('./samples/internet/internet-school-alphabet.jpg', 3)">4. 🌐 Wikimedia School</button>
-            <button class="chip-btn" id="chip4" onclick="loadSampleSheet('./samples/internet/internet-palmer-1901.jpg', 4)">5. 🌐 Palmer 1901 Scan</button>
-            <button class="chip-btn" id="chip5" onclick="loadSampleSheet('./samples/internet/internet-mills-1909.jpg', 5)">6. 🌐 E.C. Mills 1909</button>
-            <button class="chip-btn" id="chip7" onclick="loadSampleSheet('./samples/sample-sanskrit-devanagari.png', 7, 'sanskrit')" style="grid-column: span 2; background: var(--peach); font-weight: 700;">7. 🕉 Sanskrit / Devanagari Handwritten Sheet (अ–ह, ॐ, ०–९)</button>
-          </div>
+          <div id="sampleSectionLabel" style="font-family:var(--font-mono);font-size:9.5px;color:var(--muted);margin-bottom:4px;font-weight:700;">FILLED TEMPLATE, STUDIO SHEETS &amp; REAL WIKIMEDIA COMMONS SCANS:</div>
+          <div class="sample-chips" id="sampleChipsContainer"></div>
 
           <canvas id="scanCanvas" width="460" height="210"></canvas>
           <div id="scanCaption" style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:5px;display:flex;justify-content:space-between;">
@@ -619,9 +674,9 @@
           <span id="ttfStatus" style="font-family:var(--font-mono);font-size:11px;background:var(--sage);padding:2px 8px;border-radius:5px;">SFNT 0xB1B0AFBA VERIFIED</span>
         </div>
 
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-          <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;white-space:nowrap;">SCRIPT / LANGUAGE:</span>
-          <select id="scriptSelect" onchange="setScript(this.value)" style="flex:1;margin-bottom:0;">
+        <div class="script-bar">
+          <span class="script-label-badge">SCRIPT / LANGUAGE</span>
+          <select id="scriptSelect" class="styled-select" onchange="setScript(this.value)">
             <option value="latin">Latin / English (A–Z, a–z, 0–9)</option>
             <option value="sanskrit">Sanskrit — संस्कृतम् (Devanagari + Vedic ॐ ऽ । ॥)</option>
             <option value="hindi">Hindi / Marathi / Nepali — देवनागरी (Devanagari)</option>
@@ -629,7 +684,7 @@
             <option value="tamil">Tamil — தமிழ் (அ–ஹ, ௦–௯)</option>
             <option value="telugu">Telugu — తెలుగు (అ–హ, ౦–౯)</option>
             <option value="bengali">Bengali — বাংলা (অ–হ, ০–৯)</option>
-            <option value="multilingual">Multilingual — All Indic + Latin (409 Glyphs)</option>
+            <option value="multilingual">Multilingual — All Indic + Latin (415 Glyphs)</option>
           </select>
         </div>
 
@@ -766,29 +821,184 @@
       '१२३४५६७८९ािीो',
     ].join('\n');
 
-    async function loadSampleSheet(url, chipIdx = 0, scriptOverride = null) {
-      for (let i = 0; i <= 7; i++) {
-        const el = document.getElementById(`chip${i}`);
-        if (el) el.classList.toggle('active', i === chipIdx);
-      }
-      if (scriptOverride) {
-        activeScript = scriptOverride;
-        document.getElementById('scriptSelect').value = scriptOverride;
-        document.getElementById('specimenInput').value = SCRIPT_SPECIMENS[scriptOverride] || SCRIPT_SPECIMENS.latin;
-      }
+    const HINDI_CHART_TRANSCRIPT = [
+      'अआइईउऊऋएऐओऔअंः',
+      'कखगघङचछजझञटठड',
+      'ढणतथदधनपफबभमय',
+      'रलळवशषसह।॥०१२',
+      '३४५६७८९ािीोौॐ',
+    ].join('\n');
+
+    const KANNADA_CHART_TRANSCRIPT = [
+      'ಅಆಇಈಉಊಋಎಏಐಒಓಔ',
+      'ಕಖಗಘಙಚಛಜಝಞಟಠಡ',
+      'ಢಣತಥದಧನಪಫಬಭಮಯ',
+      'ರಲಳವಶಷಸಹಾಿೀೊೋ',
+      'ೌಂಃ೦೧೨೩೪೫೬೭೮೯',
+    ].join('\n');
+
+    const TAMIL_CHART_TRANSCRIPT = [
+      'அஆஇஈஉஊஎஏஐஒஓஔஃ',
+      'கஙசஜஞடணதநனபமய',
+      'ரறலளழவஶஷஸஹாிீ',
+      'ெேைொோௌ௦௧௨௩௪௫௬',
+    ].join('\n');
+
+    const TELUGU_CHART_TRANSCRIPT = [
+      'అఆఇఈఉఊఋఎఏఐఒఓఔ',
+      'కఖగఘఙచఛజఝఞటఠడ',
+      'ఢణతథదధనపఫబభమయ',
+      'రలళవశషసహాిీొో',
+      'ౌంః౦౧౨౩౪౫౬౭౮౯',
+    ].join('\n');
+
+    const BENGALI_CHART_TRANSCRIPT = [
+      'অআইঈউঊঋএঐওঔংঃ',
+      'কখগঘঙচছজঝঞটঠড',
+      'ঢণতথদধনপফবভময',
+      'রলশষসহড়ঢ়য়াজিী',
+      'েৈোৌ০১২৩৪৫৬৭৮',
+    ].join('\n');
+
+    const SCRIPT_CONFIG = {
+      latin: {
+        chartTitle: '🖨 Printable 5×13 Handwriting Chart (65 Glyphs)',
+        chartRange: 'A–Z a–z 0–9 !?',
+        sectionLabel: 'FILLED TEMPLATE, STUDIO SHEETS & REAL WIKIMEDIA COMMONS SCANS:',
+        samples: [
+          { label: '1. 🖨 Filled Template (65g)', url: './samples/sample-filled-template.png', transcript: null },
+          { label: '2. Architect Hand (65g)', url: './samples/sample-architect.png', transcript: null },
+          { label: '3. Felt Marker (65g)', url: './samples/sample-marker.png', transcript: null },
+          { label: '4. 🌐 Wikimedia School', url: './samples/internet/internet-school-alphabet.jpg', transcript: null },
+          { label: '5. 🌐 Palmer 1901 Scan', url: './samples/internet/internet-palmer-1901.jpg', transcript: null },
+          { label: '6. 🌐 E.C. Mills 1909', url: './samples/internet/internet-mills-1909.jpg', transcript: null },
+        ],
+      },
+      sanskrit: {
+        chartTitle: '🖨 Printable 5×13 Sanskrit / Devanagari Chart (65 Glyphs)',
+        chartRange: 'अ–औ क–ह ॐ ऽ । ॥ ०–९',
+        sectionLabel: 'FILLED SANSKRIT / DEVANAGARI TEMPLATES & CALLIGRAPHIC SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🕉 Filled Sanskrit Chart (65g)', url: './samples/sample-sanskrit-devanagari.png', transcript: SANSKRIT_CHART_TRANSCRIPT },
+          { label: '2. ✒ Slanted Vedic Hand (65g)', url: './samples/sample-sanskrit-slanted.png', transcript: SANSKRIT_CHART_TRANSCRIPT },
+          { label: '3. 🖊 Bold Devanagari Marker (65g)', url: './samples/sample-sanskrit-marker.png', transcript: SANSKRIT_CHART_TRANSCRIPT },
+        ],
+      },
+      hindi: {
+        chartTitle: '🖨 Printable 5×13 Hindi / Devanagari Chart (65 Glyphs)',
+        chartRange: 'अ–औ क–ह । ॥ ०–९',
+        sectionLabel: 'FILLED HINDI / DEVANAGARI TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🖨 Filled Hindi Chart (65g)', url: './samples/sample-hindi-devanagari.png', transcript: HINDI_CHART_TRANSCRIPT },
+          { label: '2. ✒ Slanted Devanagari Hand (65g)', url: './samples/sample-hindi-slanted.png', transcript: HINDI_CHART_TRANSCRIPT },
+          { label: '3. 🖊 Felt Marker Devanagari (65g)', url: './samples/sample-hindi-marker.png', transcript: HINDI_CHART_TRANSCRIPT },
+        ],
+      },
+      kannada: {
+        chartTitle: '🖨 Printable 5×13 Kannada Chart (ಕನ್ನಡ — 65 Glyphs)',
+        chartRange: 'ಅ–ಔ ಕ–ಹ ೦–೯',
+        sectionLabel: 'FILLED KANNADA (ಕನ್ನಡ) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🖨 Filled Kannada Chart (65g)', url: './samples/sample-kannada.png', transcript: KANNADA_CHART_TRANSCRIPT },
+          { label: '2. ✒ Slanted Kannada Hand (65g)', url: './samples/sample-kannada-slanted.png', transcript: KANNADA_CHART_TRANSCRIPT },
+          { label: '3. 🖊 Felt Marker Kannada (65g)', url: './samples/sample-kannada-marker.png', transcript: KANNADA_CHART_TRANSCRIPT },
+        ],
+      },
+      tamil: {
+        chartTitle: '🖨 Printable 4×13 Tamil Chart (தமிழ் — 52 Glyphs)',
+        chartRange: 'அ–ஔ க–ஹ ௦–௬',
+        sectionLabel: 'FILLED TAMIL (தமிழ்) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🖨 Filled Tamil Chart (52g)', url: './samples/sample-tamil.png', transcript: TAMIL_CHART_TRANSCRIPT },
+          { label: '2. ✒ Slanted Tamil Hand (52g)', url: './samples/sample-tamil-slanted.png', transcript: TAMIL_CHART_TRANSCRIPT },
+          { label: '3. 🖊 Felt Marker Tamil (52g)', url: './samples/sample-tamil-marker.png', transcript: TAMIL_CHART_TRANSCRIPT },
+        ],
+      },
+      telugu: {
+        chartTitle: '🖨 Printable 5×13 Telugu Chart (తెలుగు — 65 Glyphs)',
+        chartRange: 'అ–ఔ క–హ ౦–౯',
+        sectionLabel: 'FILLED TELUGU (తెలుగు) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🖨 Filled Telugu Chart (65g)', url: './samples/sample-telugu.png', transcript: TELUGU_CHART_TRANSCRIPT },
+          { label: '2. ✒ Slanted Telugu Hand (65g)', url: './samples/sample-telugu-slanted.png', transcript: TELUGU_CHART_TRANSCRIPT },
+          { label: '3. 🖊 Felt Marker Telugu (65g)', url: './samples/sample-telugu-marker.png', transcript: TELUGU_CHART_TRANSCRIPT },
+        ],
+      },
+      bengali: {
+        chartTitle: '🖨 Printable 5×13 Bengali Chart (বাংলা — 65 Glyphs)',
+        chartRange: 'অ–ঔ ক–হ ০–৮',
+        sectionLabel: 'FILLED BENGALI (বাংলা) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🖨 Filled Bengali Chart (65g)', url: './samples/sample-bengali.png', transcript: BENGALI_CHART_TRANSCRIPT },
+          { label: '2. ✒ Slanted Bengali Hand (65g)', url: './samples/sample-bengali-slanted.png', transcript: BENGALI_CHART_TRANSCRIPT },
+          { label: '3. 🖊 Felt Marker Bengali (65g)', url: './samples/sample-bengali-marker.png', transcript: BENGALI_CHART_TRANSCRIPT },
+        ],
+      },
+      multilingual: {
+        chartTitle: '🖨 Printable 5×13 Multilingual Handwriting Chart',
+        chartRange: 'अ–ह ಅ–ಹ அ–ஹ అ–హ অ–হ A–Z',
+        sectionLabel: 'MULTILINGUAL INDIC & LATIN HANDWRITING SPECIMEN SHEETS:',
+        samples: [
+          { label: '1. 🕉 Sanskrit / Devanagari (65g)', url: './samples/sample-sanskrit-devanagari.png', transcript: SANSKRIT_CHART_TRANSCRIPT },
+          { label: '2. 🖨 Kannada — ಕನ್ನಡ (65g)', url: './samples/sample-kannada.png', transcript: KANNADA_CHART_TRANSCRIPT },
+          { label: '3. 🖨 Tamil — தமிழ் (52g)', url: './samples/sample-tamil.png', transcript: TAMIL_CHART_TRANSCRIPT },
+          { label: '4. 🖨 Telugu — తెలుగు (65g)', url: './samples/sample-telugu.png', transcript: TELUGU_CHART_TRANSCRIPT },
+          { label: '5. 🖨 Bengali — বাংলা (65g)', url: './samples/sample-bengali.png', transcript: BENGALI_CHART_TRANSCRIPT },
+          { label: '6. 🖨 Latin Template (65g)', url: './samples/sample-filled-template.png', transcript: null },
+        ],
+      },
+    };
+
+    let currentTranscript = null;
+
+    function renderSampleChipsForScript(scriptKey, activeIdx = 0) {
+      const cfg = SCRIPT_CONFIG[scriptKey] || SCRIPT_CONFIG.latin;
+      document.getElementById('chartTitleText').textContent = cfg.chartTitle;
+      document.getElementById('chartRangeCode').textContent = cfg.chartRange;
+      document.getElementById('sampleSectionLabel').textContent = cfg.sectionLabel;
+      const firstUrl = cfg.samples[0].url;
+      document.getElementById('downloadChartPng').href = firstUrl;
+      document.getElementById('downloadChartPng').download = `scribefont-${scriptKey}-chart.png`;
+
+      const container = document.getElementById('sampleChipsContainer');
+      container.innerHTML = cfg.samples
+        .map(
+          (item, idx) =>
+            `<button class="chip-btn ${idx === activeIdx ? 'active' : ''}" id="chip${idx}" onclick="loadScriptSample(${idx})">${item.label}</button>`
+        )
+        .join('');
+    }
+
+    function loadScriptSample(chipIdx = 0) {
+      const cfg = SCRIPT_CONFIG[activeScript] || SCRIPT_CONFIG.latin;
+      const sample = cfg.samples[chipIdx] || cfg.samples[0];
+      renderSampleChipsForScript(activeScript, chipIdx);
+      currentTranscript = sample.transcript;
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         currentImageElement = img;
-        processLoadedImage(img, true, chipIdx === 7 ? SANSKRIT_CHART_TRANSCRIPT : null);
+        processLoadedImage(img, true, currentTranscript);
       };
-      img.src = url;
+      img.src = sample.url;
+    }
+
+    async function loadSampleSheet(url, chipIdx = 0, scriptOverride = null) {
+      if (scriptOverride) {
+        setScript(scriptOverride);
+        return;
+      }
+      loadScriptSample(chipIdx);
     }
 
     function setScript(scriptName) {
       activeScript = scriptName || 'latin';
+      const selRight = document.getElementById('scriptSelect');
+      const selLeft = document.getElementById('scriptSelectLeft');
+      if (selRight && selRight.value !== activeScript) selRight.value = activeScript;
+      if (selLeft && selLeft.value !== activeScript) selLeft.value = activeScript;
       document.getElementById('specimenInput').value = SCRIPT_SPECIMENS[activeScript] || SCRIPT_SPECIMENS.latin;
-      updateFromSliders();
+      loadScriptSample(0);
     }
 
     function handleFileUpload(ev) {
@@ -1099,6 +1309,7 @@
 
     window.setTier = setTier;
     window.setScript = setScript;
+    window.loadScriptSample = loadScriptSample;
     window.loadSampleSheet = loadSampleSheet;
     window.handleFileUpload = handleFileUpload;
     window.traceFromWebCanvas = traceFromWebCanvas;
@@ -1110,7 +1321,7 @@
     window.downloadSVG = downloadSVG;
     window.printTemplateChart = printTemplateChart;
 
-    loadSampleSheet('./samples/sample-filled-template.png', 0);
+    setScript('latin');
   </script>
 </body>
 </html>

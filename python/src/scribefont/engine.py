@@ -372,9 +372,16 @@ def synthesize_glyph_fast(
 
     indic_entry = INDIC_HANDWRITING_BANK.get(ch)
     is_combining = bool(indic_entry and indic_entry.get("combining"))
-    is_devanagari = 0x0900 <= ord(ch) <= 0x097F
+    cp = ord(ch)
+    is_indic_matra = is_combining or bool(
+        re.match(
+            r"[\u0900-\u0903\u093A-\u094F\u0951-\u0957\u0962\u0963\u0981-\u0983\u09BC-\u09CD\u0B82\u0BBE-\u0BCD\u0C01-\u0C03\u0C3E-\u0C4D\u0C82\u0C83\u0CBE-\u0CCD]",
+            ch,
+        )
+    )
+    is_devanagari = 0x0900 <= cp <= 0x097F
 
-    if traced_contours and len(traced_contours) > 0:
+    if traced_contours and len(traced_contours) > 0 and not is_indic_matra:
         contours = traced_contours
         source = "traced_image"
     else:
@@ -411,6 +418,11 @@ def synthesize_glyph_fast(
         lsb = int(xmin)
         advance_width = 0
         kern_av = 0
+        verified = len(contours) > 0
+    elif indic_entry and source == "traced_image":
+        lsb = max(6, int(xmin))
+        advance_width = max(140, int(round((xmax - xmin) + 18)))
+        kern_av = int(round(-45.0 * w_scale - abs(slant_deg) * 1.2 - flare * 12.0))
         verified = len(contours) > 0
     elif indic_entry:
         lsb = int(xmin)
