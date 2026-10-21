@@ -260,6 +260,8 @@
       padding: 7px 10px;
       margin-bottom: 12px;
       box-shadow: 2px 2px 0 var(--border);
+      min-width: 0;
+      max-width: 100%;
     }
     .script-label-badge {
       font-family: var(--font-mono);
@@ -271,9 +273,12 @@
       padding: 5px 8px;
       border-radius: 6px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .styled-select {
       flex: 1;
+      min-width: 0;
+      max-width: 100%;
       margin-bottom: 0;
       appearance: none;
       -webkit-appearance: none;
@@ -290,6 +295,9 @@
       font-weight: 700;
       color: var(--ink);
       cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       transition: background-color 0.12s ease, transform 0.08s ease;
     }
     .styled-select:hover {
@@ -298,6 +306,17 @@
     .styled-select:focus {
       outline: 2px solid var(--indigo);
       outline-offset: 1px;
+    }
+    .chart-actions-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .canvas-input-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
     }
     .slider-row {
       margin-bottom: 7px;
@@ -517,6 +536,29 @@
       .tier-switch {
         grid-template-columns: 1fr;
       }
+      .script-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 8px;
+      }
+      .script-label-badge {
+        text-align: center;
+      }
+      .styled-select {
+        width: 100%;
+        font-size: 16px;
+      }
+      .chart-actions-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .chart-actions-row > * {
+        justify-content: center;
+        text-align: center;
+        min-height: 38px;
+      }
       .sample-chips {
         grid-template-columns: 1fr;
       }
@@ -610,7 +652,7 @@
             <div style="font-size:11px;color:var(--muted);margin-bottom:7px;line-height:1.35;">
               1. Print or download the chart &rarr; 2. Write <code id="chartRangeCode">A–Z a–z 0–9 !?</code> in dark pen &rarr; 3. Upload photo/scan above. Light cyan/gray guide boxes drop out automatically.
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <div class="chart-actions-row">
               <button type="button" onclick="printTemplateChart()" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:var(--ink);color:#fff;cursor:pointer;">🖨 Print Blank Chart</button>
               <a id="downloadChartPng" href="./samples/scribefont-template-chart.png" download="scribefont-5x13-template-chart.png" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ PNG Chart</a>
               <a id="downloadChartSvg" href="./samples/scribefont-template-chart.svg" download="scribefont-5x13-template-chart.svg" style="font-family:var(--font-mono);font-size:10.5px;font-weight:700;padding:5px 9px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;">⬇ Vector SVG</a>
@@ -632,14 +674,14 @@
         <div class="sub-box">
           <div class="box-head">
             <span>B. Write Directly on the Web Canvas</span>
-            <div style="display:flex;gap:6px;">
-              <button onclick="seedCanvasDemo()" style="font-family:var(--font-mono);font-size:10px;padding:2px 7px;border:1px solid var(--border);border-radius:4px;background:var(--butter);cursor:pointer;font-weight:700;">Demo Draw 'ABO'</button>
-              <button onclick="clearPad()" style="font-family:var(--font-mono);font-size:10px;padding:2px 7px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;">Clear</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button id="btnCanvasDemo" onclick="seedCanvasDemo(true)" style="font-family:var(--font-mono);font-size:10.5px;padding:3px 8px;border:1.5px solid var(--border);border-radius:5px;background:var(--butter);cursor:pointer;font-weight:700;">Demo Draw 'ABO'</button>
+              <button onclick="clearPad()" style="font-family:var(--font-mono);font-size:10.5px;padding:3px 8px;border:1.5px solid var(--border);border-radius:5px;background:#fff;cursor:pointer;font-weight:600;">Clear</button>
             </div>
           </div>
-          <div style="display:flex;gap:6px;align-items:center;margin-bottom:5px;">
-            <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);white-space:nowrap;">Letters drawn:</span>
-            <input type="text" id="canvasTranscript" value="ABO" style="margin-bottom:0;padding:4px 8px;font-size:12px;font-family:var(--font-mono);" oninput="traceFromWebCanvas()" />
+          <div class="canvas-input-row">
+            <span style="font-family:var(--font-mono);font-size:10.5px;color:var(--muted);white-space:nowrap;">Letters drawn:</span>
+            <input type="text" id="canvasTranscript" value="ABO" style="margin-bottom:0;padding:5px 9px;font-size:13px;font-family:var(--font-mono);flex:1;min-width:0;" oninput="traceFromWebCanvas()" />
           </div>
           <canvas id="drawPad" width="380" height="92"></canvas>
         </div>
@@ -862,6 +904,7 @@
 
     const SCRIPT_CONFIG = {
       latin: {
+        canvasDemo: 'ABO',
         chartTitle: '🖨 Printable 5×13 Handwriting Chart (65 Glyphs)',
         chartRange: 'A–Z a–z 0–9 !?',
         sectionLabel: 'FILLED TEMPLATE, STUDIO SHEETS & REAL WIKIMEDIA COMMONS SCANS:',
@@ -875,6 +918,7 @@
         ],
       },
       sanskrit: {
+        canvasDemo: 'ॐकअ',
         chartTitle: '🖨 Printable 5×13 Sanskrit / Devanagari Chart (65 Glyphs)',
         chartRange: 'अ–औ क–ह ॐ ऽ । ॥ ०–९',
         sectionLabel: 'FILLED SANSKRIT / DEVANAGARI TEMPLATES & CALLIGRAPHIC SPECIMEN SHEETS:',
@@ -885,6 +929,7 @@
         ],
       },
       hindi: {
+        canvasDemo: 'कखग',
         chartTitle: '🖨 Printable 5×13 Hindi / Devanagari Chart (65 Glyphs)',
         chartRange: 'अ–औ क–ह । ॥ ०–९',
         sectionLabel: 'FILLED HINDI / DEVANAGARI TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
@@ -895,6 +940,7 @@
         ],
       },
       kannada: {
+        canvasDemo: 'ಅಕಗ',
         chartTitle: '🖨 Printable 5×13 Kannada Chart (ಕನ್ನಡ — 65 Glyphs)',
         chartRange: 'ಅ–ಔ ಕ–ಹ ೦–೯',
         sectionLabel: 'FILLED KANNADA (ಕನ್ನಡ) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
@@ -905,6 +951,7 @@
         ],
       },
       tamil: {
+        canvasDemo: 'அகச',
         chartTitle: '🖨 Printable 4×13 Tamil Chart (தமிழ் — 52 Glyphs)',
         chartRange: 'அ–ஔ க–ஹ ௦–௬',
         sectionLabel: 'FILLED TAMIL (தமிழ்) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
@@ -915,6 +962,7 @@
         ],
       },
       telugu: {
+        canvasDemo: 'అకగ',
         chartTitle: '🖨 Printable 5×13 Telugu Chart (తెలుగు — 65 Glyphs)',
         chartRange: 'అ–ఔ క–హ ౦–౯',
         sectionLabel: 'FILLED TELUGU (తెలుగు) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
@@ -925,6 +973,7 @@
         ],
       },
       bengali: {
+        canvasDemo: 'অকগ',
         chartTitle: '🖨 Printable 5×13 Bengali Chart (বাংলা — 65 Glyphs)',
         chartRange: 'অ–ঔ ক–হ ০–৮',
         sectionLabel: 'FILLED BENGALI (বাংলা) TEMPLATES & HANDWRITING SPECIMEN SHEETS:',
@@ -935,6 +984,7 @@
         ],
       },
       multilingual: {
+        canvasDemo: 'ॐAಕ',
         chartTitle: '🖨 Printable 5×13 Multilingual Handwriting Chart',
         chartRange: 'अ–ह ಅ–ಹ அ–ஹ అ–హ অ–হ A–Z',
         sectionLabel: 'MULTILINGUAL INDIC & LATIN HANDWRITING SPECIMEN SHEETS:',
@@ -950,6 +1000,7 @@
     };
 
     let currentTranscript = null;
+    let canvasHasDemoInk = false;
 
     function renderSampleChipsForScript(scriptKey, activeIdx = 0) {
       const cfg = SCRIPT_CONFIG[scriptKey] || SCRIPT_CONFIG.latin;
@@ -959,6 +1010,11 @@
       const firstUrl = cfg.samples[0].url;
       document.getElementById('downloadChartPng').href = firstUrl;
       document.getElementById('downloadChartPng').download = `scribefont-${scriptKey}-chart.png`;
+
+      const demoBtn = document.getElementById('btnCanvasDemo');
+      if (demoBtn) demoBtn.textContent = `Demo Draw '${cfg.canvasDemo}'`;
+      const canvasInput = document.getElementById('canvasTranscript');
+      if (canvasInput) canvasInput.value = cfg.canvasDemo;
 
       const container = document.getElementById('sampleChipsContainer');
       container.innerHTML = cfg.samples
@@ -979,6 +1035,7 @@
       img.onload = () => {
         currentImageElement = img;
         processLoadedImage(img, true, currentTranscript);
+        seedCanvasDemo(false);
       };
       img.src = sample.url;
     }
@@ -1089,6 +1146,7 @@
     resetPadStyle();
 
     pad.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
       isDrawing = true;
       const r = pad.getBoundingClientRect();
       const scaleX = pad.width / r.width;
@@ -1103,6 +1161,7 @@
 
     pad.addEventListener('pointermove', (e) => {
       if (!isDrawing) return;
+      e.preventDefault();
       const r = pad.getBoundingClientRect();
       const scaleX = pad.width / r.width;
       const scaleY = pad.height / r.height;
@@ -1121,44 +1180,72 @@
     });
 
     function traceFromWebCanvas() {
-      if (!canvasStrokes.length) return;
+      if (!canvasStrokes.length && !canvasHasDemoInk) return;
       const t0 = performance.now();
-      const transcript = (document.getElementById('canvasTranscript').value || 'ABO').trim();
-      currentFont = scribefont.fromCanvas(canvasStrokes, {
+      const cfg = SCRIPT_CONFIG[activeScript] || SCRIPT_CONFIG.latin;
+      const transcript = (document.getElementById('canvasTranscript').value || cfg.canvasDemo || 'ABO').trim();
+      const sourceArg = canvasStrokes.length ? canvasStrokes : pad;
+      currentFont = scribefont.fromCanvas(sourceArg, {
         width: pad.width,
         height: pad.height,
         transcript,
         strokeRadius: 2.6,
         family: 'ScribeCanvasHand',
+        script: activeScript,
       });
       const elapsed = performance.now() - t0;
       document.getElementById('engineBadge').textContent = `WEB CANVAS TRACED (${currentFont.traced_count}g)`;
       compileAndRenderFont(elapsed);
     }
 
-    function seedCanvasDemo() {
-      canvasStrokes = [
-        [[26, 74], [48, 16], [70, 74]],
-        [[34, 52], [62, 52]],
-        [[104, 16], [104, 74]],
-        [[104, 16], [134, 20], [134, 43], [104, 46], [136, 52], [136, 71], [104, 74]],
-        [[186, 16], [166, 30], [166, 62], [186, 74], [206, 62], [206, 30], [186, 16]],
-      ];
+    function seedCanvasDemo(triggerTrace = true) {
+      const cfg = SCRIPT_CONFIG[activeScript] || SCRIPT_CONFIG.latin;
+      const demoChars = cfg.canvasDemo || 'ABO';
+      document.getElementById('canvasTranscript').value = demoChars;
       resetPadStyle();
-      for (const stroke of canvasStrokes) {
-        padCtx.beginPath();
-        padCtx.moveTo(stroke[0][0], stroke[0][1]);
-        for (let i = 1; i < stroke.length; i++) padCtx.lineTo(stroke[i][0], stroke[i][1]);
-        padCtx.stroke();
+
+      if (activeScript === 'latin') {
+        canvasStrokes = [
+          [[26, 74], [48, 16], [70, 74]],
+          [[34, 52], [62, 52]],
+          [[104, 16], [104, 74]],
+          [[104, 16], [134, 20], [134, 43], [104, 46], [136, 52], [136, 71], [104, 74]],
+          [[186, 16], [166, 30], [166, 62], [186, 74], [206, 62], [206, 30], [186, 16]],
+        ];
+        canvasHasDemoInk = true;
+        for (const stroke of canvasStrokes) {
+          padCtx.beginPath();
+          padCtx.moveTo(stroke[0][0], stroke[0][1]);
+          for (let i = 1; i < stroke.length; i++) padCtx.lineTo(stroke[i][0], stroke[i][1]);
+          padCtx.stroke();
+        }
+      } else {
+        canvasStrokes = [];
+        canvasHasDemoInk = true;
+        const helperFont = currentFont || scribefont(null, { script: activeScript });
+        const chars = [...demoChars];
+        chars.forEach((ch, idx) => {
+          const g = helperFont.glyph(ch);
+          if (!g || !g.svg_path) return;
+          padCtx.save();
+          padCtx.translate(28 + idx * 96, 72);
+          padCtx.scale(0.088, -0.088);
+          padCtx.fillStyle = '#141416';
+          const p = new Path2D(g.svg_path);
+          padCtx.fill(p, 'evenodd');
+          padCtx.restore();
+        });
       }
-      document.getElementById('canvasTranscript').value = 'ABO';
-      traceFromWebCanvas();
+      if (triggerTrace) {
+        traceFromWebCanvas();
+      }
     }
 
     function clearPad() {
       canvasStrokes = [];
+      canvasHasDemoInk = false;
       resetPadStyle();
-      if (currentImageElement) processLoadedImage(currentImageElement, false);
+      if (currentImageElement) processLoadedImage(currentImageElement, false, currentTranscript);
     }
 
     function syncSliderLabels() {
